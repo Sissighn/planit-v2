@@ -1,0 +1,14 @@
+# macOS system files
+.DS_Store
+
+# Maven build output (target folder)
+target/
+
+# IDE / Editor specific
+.idea/
+*.iml
+.vscode/
+
+# Logs
+*.log
+
