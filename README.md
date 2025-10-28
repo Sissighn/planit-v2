@@ -33,20 +33,22 @@ It’s a **clean, refactored Maven application** that combines simplicity with s
 
 ## 🧰 Project Structure
 
+```bash
 planit-v2/
 ├── pom.xml
 ├── src/
-│ ├── main/
-│ │ ├── java/com/setayesh/planit/
-│ │ │ ├── core/
-│ │ │ ├── storage/
-│ │ │ ├── ui/
-│ │ │ ├── util/
-│ │ │ └── Main.java
-│ │ └── resources/tasks.json
-│ └── test/java/com/setayesh/planit/
-│ └── TaskServiceTest.java
+│   ├── main/
+│   │   ├── java/com/setayesh/planit/
+│   │   │   ├── core/
+│   │   │   ├── storage/
+│   │   │   ├── ui/
+│   │   │   ├── util/
+│   │   │   └── Main.java
+│   └── resources/tasks.json
+├── test/java/com/setayesh/planit/
+│   └── TaskServiceTest.java
 └── README.md
+```
 
 ---
 
