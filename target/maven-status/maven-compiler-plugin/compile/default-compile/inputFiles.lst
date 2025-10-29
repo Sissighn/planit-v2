@@ -1,1 +1,10 @@
 /Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/Main.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/core/Priority.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/core/Task.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/core/TaskService.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/i18n/Translations.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/storage/JsonTaskRepository.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/ui/ConsoleUI.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/ui/TodoPrinter.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/ui/UIHelper.java
+/Users/setayesh/Desktop/projects/java_projects/planit-v2/src/main/java/com/setayesh/planit/util/AnsiUtils.java
