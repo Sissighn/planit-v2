@@ -58,46 +58,55 @@ public class UIHelper {
     }
 
     public static void saveSettings() {
-        try {
-            java.util.Map<String, String> settings = new java.util.HashMap<>();
-            settings.put("language", language.name());
-            settings.put("dashboardMode", dashboardMode.name());
+        java.nio.file.Path path = java.nio.file.Path.of(SETTINGS_PATH);
+        java.nio.file.Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
 
+        AppSettings settings = new AppSettings();
+        settings.setLanguage(language);
+        settings.setDashboardMode(dashboardMode);
+
+        try {
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            mapper.writerWithDefaultPrettyPrinter().writeValue(new java.io.File(SETTINGS_PATH), settings);
-        } catch (Exception e) {
+            mapper.findAndRegisterModules();
+
+            try (java.io.BufferedWriter writer = java.nio.file.Files.newBufferedWriter(tmp)) {
+                mapper.writerWithDefaultPrettyPrinter().writeValue(writer, settings);
+            }
+
+            java.nio.file.Files.move(
+                    tmp,
+                    path,
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+
+        } catch (IOException e) {
             System.err.println("⚠️ Could not save settings: " + e.getMessage());
+            try {
+                java.nio.file.Files.deleteIfExists(tmp);
+            } catch (IOException ignore) {
+            }
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static void loadSettings() {
+        java.nio.file.Path path = java.nio.file.Path.of(SETTINGS_PATH);
+        if (!java.nio.file.Files.exists(path)) {
+            return;
+        }
+
         try {
-            java.io.File file = new java.io.File(SETTINGS_PATH);
-            if (!file.exists())
-                return;
-
             com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            java.util.Map<String, String> settings = mapper.readValue(file, java.util.Map.class);
+            mapper.findAndRegisterModules();
 
-            // Sprache
-            if (settings.containsKey("language")) {
-                String lang = settings.get("language");
-                if ("DE".equalsIgnoreCase(lang))
-                    language = Language.DE;
-                else
-                    language = Language.EN;
-            }
+            AppSettings loaded = mapper.readValue(
+                    java.nio.file.Files.newBufferedReader(path),
+                    AppSettings.class);
 
-            // Dashboard-Modus
-            if (settings.containsKey("dashboardMode")) {
-                String mode = settings.get("dashboardMode");
-                switch (mode.toUpperCase()) {
-                    case "PERCENTAGES" -> dashboardMode = DashboardMode.PERCENTAGES;
-                    case "BOTH" -> dashboardMode = DashboardMode.BOTH;
-                    default -> dashboardMode = DashboardMode.COUNTS;
-                }
-            }
+            if (loaded.getLanguage() != null)
+                language = loaded.getLanguage();
+
+            if (loaded.getDashboardMode() != null)
+                dashboardMode = loaded.getDashboardMode();
 
         } catch (IOException e) {
             System.err.println("⚠️ Could not load settings: " + e.getMessage());
@@ -211,7 +220,7 @@ public class UIHelper {
             java.nio.file.Files.writeString(
                     java.nio.file.Path.of(path),
                     "{\"dashboardMode\":\"" + mode.name() + "\"}");
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("⚠️ Could not save dashboard setting: " + e.getMessage());
         }
     }
@@ -229,7 +238,7 @@ public class UIHelper {
                 dashboardMode = DashboardMode.BOTH;
             else
                 dashboardMode = DashboardMode.COUNTS;
-        } catch (Exception e) {
+        } catch (IOException e) {
             dashboardMode = DashboardMode.COUNTS;
         }
     }
