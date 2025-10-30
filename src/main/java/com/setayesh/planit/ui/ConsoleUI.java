@@ -28,9 +28,14 @@ public class ConsoleUI {
             UIHelper.printPageHeader("home");
 
             List<Task> tasks = service.getAll();
-            TodoPrinter.printTodoList(new ArrayList<>(tasks));
-            String choice = scanner.nextLine().trim();
+            List<Task> archived = service.loadArchive();
+            long completedCount = tasks.stream().filter(Task::isDone).count();
 
+            UIHelper.printDashboard(archived.size(), (int) completedCount, tasks.size());
+
+            TodoPrinter.printTodoList(new ArrayList<>(tasks));
+
+            String choice = scanner.nextLine().trim();
             switch (choice) {
                 case "1" -> addTask();
                 case "2" -> editTask();
@@ -225,12 +230,84 @@ public class ConsoleUI {
         System.out.println(UIHelper.PASTEL_GREEN + "Tasks sorted." + UIHelper.RESET);
     }
 
-    // Settings
     private void settingsMenu() {
-        UIHelper.printPageHeader("settings");
-        System.out.println(UIHelper.PASTEL_YELLOW + "Settings coming soon!" + UIHelper.RESET);
-        System.out.println(UIHelper.PASTEL_PURPLE + UIHelper.t("press_enter") + UIHelper.RESET);
-        scanner.nextLine();
+        while (true) {
+            UIHelper.printPageHeader("settings");
+            System.out.println("1) " + UIHelper.t("settings_lang"));
+            System.out.println("2) Dashboard view");
+            System.out.println("3) " + UIHelper.t("settings_back"));
+            System.out.print("> ");
+
+            String opt = scanner.nextLine().trim();
+
+            switch (opt) {
+                case "1" -> {
+                    System.out.print(UIHelper.t("choose_lang"));
+                    String langChoice = scanner.nextLine().trim();
+
+                    switch (langChoice) {
+                        case "0" -> System.out.println(
+                                UIHelper.PASTEL_YELLOW +
+                                        UIHelper.t("deletion_cancel") +
+                                        UIHelper.RESET);
+
+                        case "1" -> {
+                            UIHelper.setLanguage(UIHelper.Language.EN);
+                            UIHelper.saveLanguageToFile(UIHelper.Language.EN);
+                            System.out.println(
+                                    UIHelper.PASTEL_GREEN +
+                                            "Language set to English." +
+                                            UIHelper.RESET);
+                            System.out.println(UIHelper.PASTEL_PURPLE + UIHelper.t("press_enter") + UIHelper.RESET);
+                            scanner.nextLine();
+                        }
+
+                        case "2" -> {
+                            UIHelper.setLanguage(UIHelper.Language.DE);
+                            UIHelper.saveLanguageToFile(UIHelper.Language.DE);
+                            System.out.println(
+                                    UIHelper.PASTEL_GREEN +
+                                            "Sprache auf Deutsch gesetzt." +
+                                            UIHelper.RESET);
+                            System.out.println(UIHelper.PASTEL_PURPLE + UIHelper.t("press_enter") + UIHelper.RESET);
+                            scanner.nextLine();
+                        }
+
+                        default -> System.out.println(
+                                UIHelper.PASTEL_YELLOW +
+                                        UIHelper.t("invalid_choice_simple") +
+                                        UIHelper.RESET);
+                    }
+                }
+
+                case "2" -> {
+                    System.out.println("""
+                            Choose dashboard view:
+                            1) Counts only
+                            2) Percentages only
+                            3) Both
+                            """);
+                    System.out.print("> ");
+                    String choice = scanner.nextLine().trim();
+                    switch (choice) {
+                        case "1" -> UIHelper.setDashboardMode(UIHelper.DashboardMode.COUNTS);
+                        case "2" -> UIHelper.setDashboardMode(UIHelper.DashboardMode.PERCENTAGES);
+                        case "3" -> UIHelper.setDashboardMode(UIHelper.DashboardMode.BOTH);
+                        default -> System.out.println("Invalid choice.");
+                    }
+                    System.out.println(UIHelper.PASTEL_GREEN + "Dashboard setting updated!" + UIHelper.RESET);
+                    System.out.println(UIHelper.PASTEL_PURPLE + UIHelper.t("press_enter") + UIHelper.RESET);
+                    scanner.nextLine();
+                }
+
+                case "3" -> {
+                    return;
+                }
+
+                default ->
+                    System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("invalid_choice_simple") + UIHelper.RESET);
+            }
+        }
     }
 
     // Helper methods

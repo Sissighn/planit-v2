@@ -6,11 +6,12 @@ import com.setayesh.planit.core.Task;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.ArrayList;
 
 /**
- * Handles reading and writing Task data to a local JSON file.
+ * Handles reading and writing Task data to a local JSON file safely.
  */
 public class JsonTaskRepository {
     private final File tasksFile;
@@ -27,7 +28,6 @@ public class JsonTaskRepository {
             dir.mkdirs();
     }
 
-    // TASKS
     public List<Task> load() {
         return readList(tasksFile);
     }
@@ -36,7 +36,6 @@ public class JsonTaskRepository {
         writeList(tasksFile, tasks);
     }
 
-    // ARCHIVE
     public List<Task> loadArchive() {
         return readList(archiveFile);
     }
@@ -45,7 +44,6 @@ public class JsonTaskRepository {
         writeList(archiveFile, archive);
     }
 
-    // Internal helpers
     private List<Task> readList(File file) {
         try {
             if (!file.exists()) {
@@ -55,15 +53,31 @@ public class JsonTaskRepository {
             });
         } catch (IOException e) {
             System.err.println("⚠️ Error reading " + file.getName() + ": " + e.getMessage());
+
+            try {
+                File backup = new File(file.getParent(), file.getName() + ".corrupted");
+                Files.copy(file.toPath(), backup.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                System.err.println("🩹 Backup saved as " + backup.getName() + " and creating new empty file.");
+                mapper.writerWithDefaultPrettyPrinter().writeValue(file, new ArrayList<Task>());
+            } catch (IOException ex) {
+                System.err.println("⚠️ Failed to create backup: " + ex.getMessage());
+            }
+
             return new ArrayList<>();
         }
     }
 
     private void writeList(File file, List<Task> tasks) {
+        File temp = new File(file.getAbsolutePath() + ".tmp");
+
         try {
-            mapper.writerWithDefaultPrettyPrinter().writeValue(file, tasks);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(temp, tasks);
+
+            Files.move(temp.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
         } catch (IOException e) {
             System.err.println("⚠️ Error saving " + file.getName() + ": " + e.getMessage());
+            temp.delete(); // temp-Datei aufräumen, falls etwas schiefging
         }
     }
 }
