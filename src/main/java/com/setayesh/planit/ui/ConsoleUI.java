@@ -47,7 +47,7 @@ public class ConsoleUI {
                 case "8" -> sortTasks();
                 case "9" -> settingsMenu();
                 case "10" -> {
-                    System.out.println(UIHelper.PASTEL_GREEN + UIHelper.t("goodbye") + UIHelper.RESET);
+                    System.out.println(Colors.PASTEL_GREEN + UIHelper.t("goodbye") + Colors.RESET);
                     service.save();
                     running = false;
                 }
@@ -61,7 +61,7 @@ public class ConsoleUI {
         System.out.print(UIHelper.t("enter_new"));
         String title = scanner.nextLine().trim();
         if (title.isEmpty()) {
-            System.out.println(UIHelper.PASTEL_RED + UIHelper.t("empty_task") + UIHelper.RESET);
+            System.out.println(Colors.PASTEL_RED + UIHelper.t("empty_task") + Colors.RESET);
             return;
         }
 
@@ -72,7 +72,7 @@ public class ConsoleUI {
             try {
                 deadline = LocalDate.parse(dateStr, java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
             } catch (Exception e) {
-                System.out.println(UIHelper.PASTEL_YELLOW + "Invalid date format, ignored." + UIHelper.RESET);
+                System.out.println(Colors.PASTEL_YELLOW + "Invalid date format, ignored." + Colors.RESET);
             }
         }
 
@@ -84,18 +84,18 @@ public class ConsoleUI {
                 case "1" -> priority = Priority.HIGH;
                 case "2" -> priority = Priority.MEDIUM;
                 case "3" -> priority = Priority.LOW;
-                default -> System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("invalid_priority") + UIHelper.RESET);
+                default -> System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("invalid_priority") + Colors.RESET);
             }
         }
 
         service.addTask(new Task(title, deadline, priority));
-        System.out.println(UIHelper.PASTEL_GREEN + UIHelper.t("task_added") + UIHelper.RESET);
+        System.out.println(Colors.PASTEL_GREEN + UIHelper.t("task_added") + Colors.RESET);
     }
 
     private void editTask() {
         List<Task> tasks = service.getAll();
         if (tasks.isEmpty()) {
-            System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("no_tasks") + UIHelper.RESET);
+            System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("no_tasks") + Colors.RESET);
             return;
         }
 
@@ -126,19 +126,19 @@ public class ConsoleUI {
                 case "1" -> priority = Priority.HIGH;
                 case "2" -> priority = Priority.MEDIUM;
                 case "3" -> priority = Priority.LOW;
-                default -> System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("invalid_priority") + UIHelper.RESET);
+                default -> System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("invalid_priority") + Colors.RESET);
             }
         }
 
         service.editTask(index, title, deadline, priority);
-        System.out.println(UIHelper.PASTEL_GREEN + "Task updated." + UIHelper.RESET);
+        System.out.println(Colors.PASTEL_GREEN + "Task updated." + Colors.RESET);
     }
 
     // 3) Mark / Unmark Done
     private void toggleDone() {
         List<Task> tasks = service.getAll();
         if (tasks.isEmpty()) {
-            System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("no_to_mark") + UIHelper.RESET);
+            System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("no_to_mark") + Colors.RESET);
             return;
         }
 
@@ -153,14 +153,14 @@ public class ConsoleUI {
         else
             service.markDone(index);
 
-        System.out.println(UIHelper.PASTEL_GREEN + UIHelper.t("marked_done") + UIHelper.RESET);
+        System.out.println(Colors.PASTEL_GREEN + UIHelper.t("marked_done") + Colors.RESET);
     }
 
     // 4) Delete Task
     private void deleteTask() {
         List<Task> tasks = service.getAll();
         if (tasks.isEmpty()) {
-            System.out.println(UIHelper.PASTEL_YELLOW + "No tasks to delete." + UIHelper.RESET);
+            System.out.println(Colors.PASTEL_YELLOW + "No tasks to delete." + Colors.RESET);
             return;
         }
 
@@ -170,26 +170,26 @@ public class ConsoleUI {
             return;
 
         service.deleteTask(index);
-        System.out.println(UIHelper.PASTEL_GREEN + "Task deleted." + UIHelper.RESET);
+        System.out.println(Colors.PASTEL_GREEN + "Task deleted." + Colors.RESET);
     }
 
     // 5) Archive Task
     private void archiveTask() {
         List<Task> tasks = service.getAll();
         if (tasks.isEmpty()) {
-            System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("no_tasks") + UIHelper.RESET);
+            System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("no_tasks") + Colors.RESET);
             return;
         }
 
         TodoPrinter.printTodoList(new ArrayList<>(tasks));
         int index = askIndex("Enter number to archive (0 to cancel): ", tasks.size(), true);
         if (index == -1) {
-            System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("deletion_cancel") + UIHelper.RESET);
+            System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("deletion_cancel") + Colors.RESET);
             return;
         }
 
         service.archiveTask(index);
-        System.out.println(UIHelper.PASTEL_GREEN + UIHelper.t("archived_success") + UIHelper.RESET);
+        System.out.println(Colors.PASTEL_GREEN + UIHelper.t("archived_success") + Colors.RESET);
     }
 
     // 6) View Archive
@@ -197,18 +197,18 @@ public class ConsoleUI {
         List<Task> archived = service.loadArchive();
         UIHelper.printPageHeader("viewArchive");
         if (archived.isEmpty()) {
-            System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("archive_empty") + UIHelper.RESET);
+            System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("archive_empty") + Colors.RESET);
             return;
         }
         TodoPrinter.printTodoList(new ArrayList<>(archived));
-        System.out.println(UIHelper.PASTEL_PURPLE + UIHelper.t("press_enter") + UIHelper.RESET);
+        System.out.println(Colors.PASTEL_PURPLE + UIHelper.t("press_enter") + Colors.RESET);
         scanner.nextLine();
     }
 
     // 7) Clear Completed
     private void clearCompleted() {
         service.clearCompletedNotArchived();
-        System.out.println(UIHelper.PASTEL_GREEN + UIHelper.t("tasks_cleared") + UIHelper.RESET);
+        System.out.println(Colors.PASTEL_GREEN + UIHelper.t("tasks_cleared") + Colors.RESET);
     }
 
     // 8) Sort
@@ -225,9 +225,9 @@ public class ConsoleUI {
             case "1" -> service.sortByDeadline();
             case "2" -> service.sortByPriority();
             case "3" -> service.sortByTitle();
-            default -> System.out.println(UIHelper.PASTEL_YELLOW + "Invalid choice." + UIHelper.RESET);
+            default -> System.out.println(Colors.PASTEL_YELLOW + "Invalid choice." + Colors.RESET);
         }
-        System.out.println(UIHelper.PASTEL_GREEN + "Tasks sorted." + UIHelper.RESET);
+        System.out.println(Colors.PASTEL_GREEN + "Tasks sorted." + Colors.RESET);
     }
 
     private void settingsMenu() {
@@ -247,18 +247,18 @@ public class ConsoleUI {
 
                     switch (langChoice) {
                         case "0" -> System.out.println(
-                                UIHelper.PASTEL_YELLOW +
+                                Colors.PASTEL_YELLOW +
                                         UIHelper.t("deletion_cancel") +
-                                        UIHelper.RESET);
+                                        Colors.RESET);
 
                         case "1" -> {
                             UIHelper.setLanguage(UIHelper.Language.EN);
                             UIHelper.saveLanguageToFile(UIHelper.Language.EN);
                             System.out.println(
-                                    UIHelper.PASTEL_GREEN +
+                                    Colors.PASTEL_GREEN +
                                             "Language set to English." +
-                                            UIHelper.RESET);
-                            System.out.println(UIHelper.PASTEL_PURPLE + UIHelper.t("press_enter") + UIHelper.RESET);
+                                            Colors.RESET);
+                            System.out.println(Colors.PASTEL_PURPLE + UIHelper.t("press_enter") + Colors.RESET);
                             scanner.nextLine();
                         }
 
@@ -266,17 +266,17 @@ public class ConsoleUI {
                             UIHelper.setLanguage(UIHelper.Language.DE);
                             UIHelper.saveLanguageToFile(UIHelper.Language.DE);
                             System.out.println(
-                                    UIHelper.PASTEL_GREEN +
+                                    Colors.PASTEL_GREEN +
                                             "Sprache auf Deutsch gesetzt." +
-                                            UIHelper.RESET);
-                            System.out.println(UIHelper.PASTEL_PURPLE + UIHelper.t("press_enter") + UIHelper.RESET);
+                                            Colors.RESET);
+                            System.out.println(Colors.PASTEL_PURPLE + UIHelper.t("press_enter") + Colors.RESET);
                             scanner.nextLine();
                         }
 
                         default -> System.out.println(
-                                UIHelper.PASTEL_YELLOW +
+                                Colors.PASTEL_YELLOW +
                                         UIHelper.t("invalid_choice_simple") +
-                                        UIHelper.RESET);
+                                        Colors.RESET);
                     }
                 }
 
@@ -295,8 +295,8 @@ public class ConsoleUI {
                         case "3" -> UIHelper.setDashboardMode(UIHelper.DashboardMode.BOTH);
                         default -> System.out.println("Invalid choice.");
                     }
-                    System.out.println(UIHelper.PASTEL_GREEN + "Dashboard setting updated!" + UIHelper.RESET);
-                    System.out.println(UIHelper.PASTEL_PURPLE + UIHelper.t("press_enter") + UIHelper.RESET);
+                    System.out.println(Colors.PASTEL_GREEN + "Dashboard setting updated!" + Colors.RESET);
+                    System.out.println(Colors.PASTEL_PURPLE + UIHelper.t("press_enter") + Colors.RESET);
                     scanner.nextLine();
                 }
 
@@ -305,7 +305,7 @@ public class ConsoleUI {
                 }
 
                 default ->
-                    System.out.println(UIHelper.PASTEL_YELLOW + UIHelper.t("invalid_choice_simple") + UIHelper.RESET);
+                    System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("invalid_choice_simple") + Colors.RESET);
             }
         }
     }
@@ -328,7 +328,7 @@ public class ConsoleUI {
                     return idx;
             } catch (NumberFormatException ignored) {
             }
-            System.out.println(UIHelper.PASTEL_RED + UIHelper.t("please_number") + UIHelper.RESET);
+            System.out.println(Colors.PASTEL_RED + UIHelper.t("please_number") + Colors.RESET);
         }
     }
 }

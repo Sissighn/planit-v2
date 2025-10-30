@@ -10,10 +10,10 @@ public class TodoPrinter {
     private static final int TASK_WIDTH = 40;
 
     public static void printTodoList(ArrayList<Task> tasks) {
-        String placeHolder = UIHelper.PASTEL_PINK;
-        String lineColor = UIHelper.PASTEL_BROWN;
-        String checkColor = UIHelper.PASTEL_GREEN;
-        String reset = UIHelper.RESET;
+        String placeHolder = Colors.PASTEL_PINK;
+        String lineColor = Colors.PASTEL_BROWN;
+        String checkColor = Colors.PASTEL_GREEN;
+        String reset = Colors.RESET;
 
         String topLine = lineColor + "╔" + repeat("═", NUM_WIDTH) + "╦" + repeat("═", TASK_WIDTH) + "╗" + reset;
         String midLine = lineColor + "╠" + repeat("═", NUM_WIDTH) + "╬" + repeat("═", TASK_WIDTH) + "╣" + reset;
@@ -26,29 +26,29 @@ public class TodoPrinter {
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
             String statusSymbol = t.isDone() ? "✔" : " ";
-            String coloredStatus = (t.isDone() ? checkColor : placeHolder) + "[" + statusSymbol + "]" + UIHelper.RESET;
+            String coloredStatus = (t.isDone() ? checkColor : placeHolder) + "[" + statusSymbol + "]" + Colors.RESET;
 
             String priorityColor;
             String priorityText;
             if (t.getPriority() == null) {
-                priorityColor = UIHelper.PASTEL_BROWN;
+                priorityColor = Colors.PASTEL_BROWN;
                 priorityText = "—";
             } else {
                 switch (t.getPriority()) {
                     case HIGH -> {
-                        priorityColor = UIHelper.PASTEL_RED_URGENT;
+                        priorityColor = Colors.PASTEL_RED_URGENT;
                         priorityText = "HIGH";
                     }
                     case MEDIUM -> {
-                        priorityColor = UIHelper.PASTEL_YELLOW;
+                        priorityColor = Colors.PASTEL_YELLOW;
                         priorityText = "MEDIUM";
                     }
                     case LOW -> {
-                        priorityColor = UIHelper.PASTEL_CYAN;
+                        priorityColor = Colors.PASTEL_CYAN;
                         priorityText = "LOW";
                     }
                     default -> {
-                        priorityColor = UIHelper.PASTEL_BROWN;
+                        priorityColor = Colors.PASTEL_BROWN;
                         priorityText = "—";
                     }
                 }

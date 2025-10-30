@@ -2,6 +2,7 @@ package com.setayesh.planit.ui;
 
 import java.io.*;
 import com.setayesh.planit.i18n.Translations;
+import com.setayesh.planit.settings.AppSettings;
 
 public class UIHelper {
 
@@ -13,19 +14,6 @@ public class UIHelper {
     public enum DashboardMode {
         COUNTS, PERCENTAGES, BOTH
     }
-
-    public static final String RESET = "\u001B[0m";
-    public static final String BOLD = "\u001B[1m";
-
-    public static final String PASTEL_PINK = "\u001B[38;5;175m";
-    public static final String PASTEL_PURPLE = "\u001B[38;5;183m";
-    public static final String PASTEL_SALMON_PINK = "\u001B[38;5;205m";
-    public static final String PASTEL_YELLOW = "\u001B[38;5;229m";
-    public static final String PASTEL_CYAN = "\u001B[38;5;159m";
-    public static final String PASTEL_BROWN = "\u001B[38;5;180m";
-    public static final String PASTEL_RED = "\u001B[38;5;131m";
-    public static final String PASTEL_RED_URGENT = "\u001b[38;2;210;58;58m";
-    public static final String PASTEL_GREEN = "\u001B[38;5;120m";
 
     private static final String SETTINGS_FILE = "settings.cfg";
     private static Language language = Language.EN;
@@ -130,17 +118,17 @@ public class UIHelper {
         };
 
         String line = "══════════════════════════════════════════════";
-        System.out.println(PASTEL_PURPLE + line + RESET);
-        System.out.println(BOLD + PASTEL_PINK + "  " + title + RESET);
-        System.out.println(PASTEL_PURPLE + line + RESET);
+        System.out.println(Colors.PASTEL_PURPLE + line + Colors.RESET);
+        System.out.println(Colors.BOLD + Colors.PASTEL_PINK + "  " + title + Colors.RESET);
+        System.out.println(Colors.PASTEL_PURPLE + line + Colors.RESET);
     }
 
     public static void printHeader(String title) {
         clearScreen();
         String line = "══════════════════════════════════════════════";
-        System.out.println(PASTEL_PURPLE + line + RESET);
-        System.out.println(BOLD + PASTEL_PINK + "  " + title + RESET);
-        System.out.println(PASTEL_PURPLE + line + RESET);
+        System.out.println(Colors.PASTEL_PURPLE + line + Colors.RESET);
+        System.out.println(Colors.BOLD + Colors.PASTEL_PINK + "  " + title + Colors.RESET);
+        System.out.println(Colors.PASTEL_PURPLE + line + Colors.RESET);
     }
 
     public static void clearScreen() {
@@ -172,7 +160,7 @@ public class UIHelper {
         try (PrintWriter pw = new PrintWriter(new FileWriter(SETTINGS_FILE))) {
             pw.println("lang=" + (lang == Language.DE ? "DE" : "EN"));
         } catch (IOException e) {
-            System.out.println(PASTEL_RED_URGENT + "Could not save settings: " + e.getMessage() + RESET);
+            System.out.println(Colors.PASTEL_RED_URGENT + "Could not save settings: " + e.getMessage() + Colors.RESET);
         }
     }
 
@@ -209,9 +197,9 @@ public class UIHelper {
                     totalLabel, total, totalPercent);
         };
 
-        System.out.println(PASTEL_CYAN + "──────────────────────────────────────────────" + RESET);
-        System.out.println(PASTEL_CYAN + line + RESET);
-        System.out.println(PASTEL_CYAN + "──────────────────────────────────────────────" + RESET);
+        System.out.println(Colors.PASTEL_CYAN + "──────────────────────────────────────────────" + Colors.RESET);
+        System.out.println(Colors.PASTEL_CYAN + line + Colors.RESET);
+        System.out.println(Colors.PASTEL_CYAN + "──────────────────────────────────────────────" + Colors.RESET);
     }
 
     public static void saveDashboardModeToFile(DashboardMode mode) {
