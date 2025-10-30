@@ -1,4 +1,4 @@
-package com.setayesh.planit.ui;
+package com.setayesh.planit.settings;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.setayesh.planit.ui.UIHelper.Language;
@@ -12,6 +12,14 @@ import com.setayesh.planit.ui.UIHelper.DashboardMode;
 public class AppSettings {
     private Language language = Language.EN;
     private DashboardMode dashboardMode = DashboardMode.COUNTS;
+
+    public AppSettings() {
+    }
+
+    public AppSettings(Language language, DashboardMode dashboardMode) {
+        this.language = language;
+        this.dashboardMode = dashboardMode;
+    }
 
     public Language getLanguage() {
         return language;

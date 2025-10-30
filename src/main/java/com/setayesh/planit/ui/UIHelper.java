@@ -3,6 +3,7 @@ package com.setayesh.planit.ui;
 import java.io.*;
 import com.setayesh.planit.i18n.Translations;
 import com.setayesh.planit.settings.AppSettings;
+import com.setayesh.planit.settings.SettingsManager;
 
 public class UIHelper {
 
@@ -19,12 +20,12 @@ public class UIHelper {
     private static Language language = Language.EN;
     private static DashboardMode dashboardMode = DashboardMode.COUNTS;
 
-    private static final String SETTINGS_PATH = System.getProperty("user.home") + "/planit_settings.json";
-
     public static void setLanguage(Language lang) {
         language = lang;
-        saveSettings();
+        SettingsManager.save(new AppSettings(language, dashboardMode));
     }
+
+    // -------------------- LANGUAGE -------------------- //
 
     public static Language getLanguage() {
         return language;
@@ -34,73 +35,27 @@ public class UIHelper {
         return Translations.get(key, language);
     }
 
+    // -------------------- DASHBOARD -------------------- //
     public static DashboardMode getDashboardMode() {
         return dashboardMode;
     }
 
     public static void setDashboardMode(DashboardMode mode) {
         dashboardMode = mode;
-        saveDashboardModeToFile(mode);
-        saveSettings();
-
+        SettingsManager.save(new AppSettings(language, dashboardMode));
     }
 
-    public static void saveSettings() {
-        java.nio.file.Path path = java.nio.file.Path.of(SETTINGS_PATH);
-        java.nio.file.Path tmp = path.resolveSibling(path.getFileName() + ".tmp");
-
-        AppSettings settings = new AppSettings();
-        settings.setLanguage(language);
-        settings.setDashboardMode(dashboardMode);
-
-        try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            mapper.findAndRegisterModules();
-
-            try (java.io.BufferedWriter writer = java.nio.file.Files.newBufferedWriter(tmp)) {
-                mapper.writerWithDefaultPrettyPrinter().writeValue(writer, settings);
-            }
-
-            java.nio.file.Files.move(
-                    tmp,
-                    path,
-                    java.nio.file.StandardCopyOption.REPLACE_EXISTING,
-                    java.nio.file.StandardCopyOption.ATOMIC_MOVE);
-
-        } catch (IOException e) {
-            System.err.println("⚠️ Could not save settings: " + e.getMessage());
-            try {
-                java.nio.file.Files.deleteIfExists(tmp);
-            } catch (IOException ignore) {
-            }
-        }
-    }
+    // -------------------- SETTINGS LOAD -------------------- //
 
     public static void loadSettings() {
-        java.nio.file.Path path = java.nio.file.Path.of(SETTINGS_PATH);
-        if (!java.nio.file.Files.exists(path)) {
-            return;
-        }
-
-        try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            mapper.findAndRegisterModules();
-
-            AppSettings loaded = mapper.readValue(
-                    java.nio.file.Files.newBufferedReader(path),
-                    AppSettings.class);
-
-            if (loaded.getLanguage() != null)
-                language = loaded.getLanguage();
-
-            if (loaded.getDashboardMode() != null)
-                dashboardMode = loaded.getDashboardMode();
-
-        } catch (IOException e) {
-            System.err.println("⚠️ Could not load settings: " + e.getMessage());
-        }
+        AppSettings loaded = SettingsManager.load();
+        if (loaded.getLanguage() != null)
+            language = loaded.getLanguage();
+        if (loaded.getDashboardMode() != null)
+            dashboardMode = loaded.getDashboardMode();
     }
 
+    // -------------------- UI PRINTING -------------------- //
     public static void printPageHeader(String sectionKey) {
         clearScreen();
 
@@ -134,26 +89,6 @@ public class UIHelper {
     public static void clearScreen() {
         System.out.print("\033[H\033[2J");
         System.out.flush();
-    }
-
-    public static Language loadLanguageFromFile() {
-        File f = new File(SETTINGS_FILE);
-        if (!f.exists())
-            return Language.EN;
-        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                line = line.trim();
-                if (line.startsWith("lang=")) {
-                    String v = line.substring(5).trim().toUpperCase();
-                    if (v.equals("DE"))
-                        return Language.DE;
-                    return Language.EN;
-                }
-            }
-        } catch (IOException ignored) {
-        }
-        return Language.EN;
     }
 
     public static void saveLanguageToFile(Language lang) {
@@ -200,34 +135,5 @@ public class UIHelper {
         System.out.println(Colors.PASTEL_CYAN + "──────────────────────────────────────────────" + Colors.RESET);
         System.out.println(Colors.PASTEL_CYAN + line + Colors.RESET);
         System.out.println(Colors.PASTEL_CYAN + "──────────────────────────────────────────────" + Colors.RESET);
-    }
-
-    public static void saveDashboardModeToFile(DashboardMode mode) {
-        try {
-            String path = System.getProperty("user.home") + "/planit_settings.json";
-            java.nio.file.Files.writeString(
-                    java.nio.file.Path.of(path),
-                    "{\"dashboardMode\":\"" + mode.name() + "\"}");
-        } catch (IOException e) {
-            System.err.println("⚠️ Could not save dashboard setting: " + e.getMessage());
-        }
-    }
-
-    public static void loadDashboardMode() {
-        try {
-            String path = System.getProperty("user.home") + "/planit_settings.json";
-            if (!java.nio.file.Files.exists(java.nio.file.Path.of(path)))
-                return;
-
-            String json = java.nio.file.Files.readString(java.nio.file.Path.of(path));
-            if (json.contains("PERCENTAGES"))
-                dashboardMode = DashboardMode.PERCENTAGES;
-            else if (json.contains("BOTH"))
-                dashboardMode = DashboardMode.BOTH;
-            else
-                dashboardMode = DashboardMode.COUNTS;
-        } catch (IOException e) {
-            dashboardMode = DashboardMode.COUNTS;
-        }
     }
 }

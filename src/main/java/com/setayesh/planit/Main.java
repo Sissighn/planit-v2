@@ -15,8 +15,6 @@ public class Main {
     public static void main(String[] args) {
 
         UIHelper.loadSettings();
-        UIHelper.loadLanguageFromFile();
-        UIHelper.loadDashboardMode();
 
         String baseDirPath = System.getProperty("user.home") + File.separator + ".planit";
 
