@@ -24,7 +24,7 @@ public final class AnsiUtils {
         return ANSI_PATTERN.matcher(s).replaceAll("");
     }
 
-    /** Visible character length (ignores ANSI codes). */
+    // Visible character length (ignores ANSI codes).
     public static int visibleLength(String s) {
         return strip(s).length();
     }
@@ -49,7 +49,7 @@ public final class AnsiUtils {
                     while (j < s.length() && s.charAt(j) != 'm')
                         j++;
                     if (j < s.length())
-                        j++; // include 'm'
+                        j++;
                 }
                 out.append(s, i, j);
                 i = j - 1;
@@ -61,7 +61,6 @@ public final class AnsiUtils {
         return out.toString();
     }
 
-    /** Pad with spaces on the right to reach target visible width. */
     public static String padRight(String s, int width) {
         if (s == null)
             s = "";

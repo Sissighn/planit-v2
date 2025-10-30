@@ -81,9 +81,71 @@ public class TodoPrinter {
         }
 
         System.out.println(lowLine);
+        printButtons(lineColor, reset);
+
     }
 
     private static String repeat(String s, int times) {
         return s.repeat(times);
+    }
+
+    private static void printButtons(String lineColor, String reset) {
+        String[] buttons = {
+                "1 - Add",
+                "2 - Edit",
+                "3 - Done/Undone",
+                "4 - Delete",
+                "5 - Archive",
+                "6 - View archive",
+                "7 - Clear completed tasks",
+                "8 - Sorting",
+                "9 - Settings",
+                "10 - Exit"
+        };
+
+        int buttonWidth = 0;
+        for (String b : buttons)
+            if (b.length() > buttonWidth)
+                buttonWidth = b.length();
+        buttonWidth += 4;
+        int consoleWidth = getConsoleWidth();
+        if (consoleWidth <= 0)
+            consoleWidth = 80;
+
+        // Approximate how many buttons fit in one line
+        int buttonsPerLine = Math.max(1, consoleWidth / (buttonWidth + 2));
+
+        // Print in multiple rows if needed
+        for (int i = 0; i < buttons.length; i += buttonsPerLine) {
+            int end = Math.min(i + buttonsPerLine, buttons.length);
+
+            // top border
+            for (int j = i; j < end; j++)
+                System.out.print(lineColor + "╔" + "═".repeat(buttonWidth) + "╗ " + reset);
+            System.out.println();
+
+            // text
+            for (int j = i; j < end; j++) {
+                String b = buttons[j];
+                System.out.print(lineColor + "║ " + b + " ".repeat(buttonWidth - b.length() - 1) + "║ " + reset);
+            }
+            System.out.println();
+
+            // bottom border
+            for (int j = i; j < end; j++)
+                System.out.print(lineColor + "╚" + "═".repeat(buttonWidth) + "╝ " + reset);
+            System.out.println("\n");
+        }
+    }
+
+    // Helper: try to detect terminal width dynamically
+    private static int getConsoleWidth() {
+        try {
+            String columns = System.getenv("COLUMNS");
+            if (columns != null)
+                return Integer.parseInt(columns);
+        } catch (NumberFormatException ignored) {
+        }
+        return 0;
     }
 }
