@@ -1,4 +1,5 @@
 # 🌍 PlanIT v2
+[![CI](https://github.com/Sissighn/planit-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/Sissighn/planit-v2/actions/workflows/ci.yml)
 
 > A modern, personal **task & time management CLI app** built with **Java 21**, designed for developers and productivity lovers.
 
