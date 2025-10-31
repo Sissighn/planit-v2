@@ -4,7 +4,6 @@ import com.setayesh.planit.storage.JsonTaskRepository;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Service class that manages the logic for adding, editing, deleting,
@@ -107,16 +106,6 @@ public class TaskService {
     public void sortByTitle() {
         tasks.sort((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
         save();
-    }
-
-    // SEARCH
-    public List<Task> searchTasks(String keyword) {
-        if (keyword == null || keyword.isBlank())
-            return Collections.emptyList();
-        String lower = keyword.toLowerCase();
-        return tasks.stream()
-                .filter(t -> t.getTitle() != null && t.getTitle().toLowerCase().contains(lower))
-                .collect(Collectors.toList());
     }
 
     // Archive
