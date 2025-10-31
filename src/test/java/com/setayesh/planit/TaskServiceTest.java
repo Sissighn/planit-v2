@@ -81,4 +81,48 @@ class TaskServiceTest {
         assertEquals("Apple", service.get(0).getTitle());
         assertEquals("Zebra", service.get(1).getTitle());
     }
+
+    // --- Additional Tests ---
+
+    @Test
+    void archiveTask_shouldMoveToArchiveList() {
+        var repo = new InMemoryTaskRepository();
+        var service = new TaskService(repo);
+
+        var t = new Task("Archive Me", null, Priority.MEDIUM);
+        service.addTask(t);
+
+        service.archiveTask(0);
+
+        assertTrue(repo.loadArchive().stream()
+                .anyMatch(a -> a.getTitle().equals("Archive Me")));
+        assertTrue(service.getAll().isEmpty(), "Task should be removed from active list");
+    }
+
+    @Test
+    void clearCompletedNotArchived_shouldRemoveOnlyCompletedNonArchivedTasks() {
+        var repo = new InMemoryTaskRepository();
+        var service = new TaskService(repo);
+
+        var done = new Task("Done Task", null, Priority.LOW);
+        done.markDone();
+
+        var active = new Task("Active Task", null, Priority.LOW);
+
+        var archivedDone = new Task("Archived Task", null, Priority.MEDIUM);
+        archivedDone.markDone();
+        archivedDone.setArchived(true);
+
+        service.addTask(done);
+        service.addTask(active);
+        service.addTask(archivedDone);
+
+        service.clearCompletedNotArchived();
+
+        var remaining = service.getAll();
+        assertEquals(2, remaining.size());
+        assertTrue(remaining.stream().anyMatch(t -> t.getTitle().equals("Active Task")));
+        assertTrue(remaining.stream().anyMatch(Task::isArchived),
+                "Archived done tasks should remain");
+    }
 }
