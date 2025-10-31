@@ -1,6 +1,7 @@
 package com.setayesh.planit.storage;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.setayesh.planit.core.Task;
 
@@ -16,7 +17,9 @@ import java.util.ArrayList;
 public class JsonTaskRepository {
     private final File tasksFile;
     private final File archiveFile;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = new ObjectMapper()
+            .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     public JsonTaskRepository(String basePath) {
         this.tasksFile = new File(basePath, "planit_tasks.json");
