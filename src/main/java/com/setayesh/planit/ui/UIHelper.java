@@ -1,9 +1,9 @@
 package com.setayesh.planit.ui;
 
-import java.io.*;
 import com.setayesh.planit.i18n.Translations;
 import com.setayesh.planit.settings.AppSettings;
 import com.setayesh.planit.settings.SettingsManager;
+import com.setayesh.planit.settings.AppContext;
 
 public class UIHelper {
 
@@ -16,43 +16,41 @@ public class UIHelper {
         COUNTS, PERCENTAGES, BOTH
     }
 
-    private static final String SETTINGS_FILE = "settings.cfg";
-    private static Language language = Language.EN;
-    private static DashboardMode dashboardMode = DashboardMode.COUNTS;
-
-    public static void setLanguage(Language lang) {
-        language = lang;
-        SettingsManager.save(new AppSettings(language, dashboardMode));
+    // -------------------- SETTINGS -------------------- //
+    public static void loadSettings() {
+        AppSettings loaded = SettingsManager.load();
+        if (loaded.getLanguage() != null)
+            AppContext.setLanguage(loaded.getLanguage());
+        if (loaded.getDashboardMode() != null)
+            AppContext.setDashboardMode(loaded.getDashboardMode());
     }
 
     // -------------------- LANGUAGE -------------------- //
+    public static void setLanguage(Language lang) {
+        AppContext.setLanguage(lang);
+        SettingsManager.save(new AppSettings(
+                AppContext.getLanguage(),
+                AppContext.getDashboardMode()));
+    }
 
     public static Language getLanguage() {
-        return language;
+        return AppContext.getLanguage();
     }
 
     public static String t(String key) {
-        return Translations.get(key, language);
+        return Translations.get(key, AppContext.getLanguage());
     }
 
     // -------------------- DASHBOARD -------------------- //
     public static DashboardMode getDashboardMode() {
-        return dashboardMode;
+        return AppContext.getDashboardMode();
     }
 
     public static void setDashboardMode(DashboardMode mode) {
-        dashboardMode = mode;
-        SettingsManager.save(new AppSettings(language, dashboardMode));
-    }
-
-    // -------------------- SETTINGS LOAD -------------------- //
-
-    public static void loadSettings() {
-        AppSettings loaded = SettingsManager.load();
-        if (loaded.getLanguage() != null)
-            language = loaded.getLanguage();
-        if (loaded.getDashboardMode() != null)
-            dashboardMode = loaded.getDashboardMode();
+        AppContext.setDashboardMode(mode);
+        SettingsManager.save(new AppSettings(
+                AppContext.getLanguage(),
+                AppContext.getDashboardMode()));
     }
 
     // -------------------- UI PRINTING -------------------- //
@@ -91,15 +89,10 @@ public class UIHelper {
         System.out.flush();
     }
 
-    public static void saveLanguageToFile(Language lang) {
-        try (PrintWriter pw = new PrintWriter(new FileWriter(SETTINGS_FILE))) {
-            pw.println("lang=" + (lang == Language.DE ? "DE" : "EN"));
-        } catch (IOException e) {
-            System.out.println(Colors.PASTEL_RED_URGENT + "Could not save settings: " + e.getMessage() + Colors.RESET);
-        }
-    }
-
     public static void printDashboard(int archived, int completed, int total) {
+        Language language = AppContext.getLanguage();
+        DashboardMode dashboardMode = AppContext.getDashboardMode();
+
         String archivedLabel = (language == Language.EN) ? "Archived" : "Archiviert";
         String completedLabel = (language == Language.EN) ? "Completed" : "Erledigt";
         String totalLabel = (language == Language.EN) ? "Total" : "Gesamt";
@@ -119,10 +112,10 @@ public class UIHelper {
                     totalLabel, total);
 
             case PERCENTAGES -> String.format(
-                    "📦 %s: %.0f%%  |  ✅ %s: %.0f%%  |  📋 %s: %.0f%%",
+                    "📦 %s: %.0f%%  |  ✅ %s: %.0f%%  |  📋 %s: %d (100%%)",
                     archivedLabel, archivedPercent,
                     completedLabel, completedPercent,
-                    totalLabel, totalPercent);
+                    totalLabel, total);
 
             case BOTH -> String.format(
                     "📦 %s: %d (%.0f%%)  |  ✅ %s: %d (%.0f%%)  |  📋 %s: %d (%.0f%%)",

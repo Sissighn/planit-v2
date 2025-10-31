@@ -253,7 +253,6 @@ public class ConsoleUI {
 
                         case "1" -> {
                             UIHelper.setLanguage(UIHelper.Language.EN);
-                            UIHelper.saveLanguageToFile(UIHelper.Language.EN);
                             System.out.println(
                                     Colors.PASTEL_GREEN +
                                             "Language set to English." +
@@ -264,7 +263,6 @@ public class ConsoleUI {
 
                         case "2" -> {
                             UIHelper.setLanguage(UIHelper.Language.DE);
-                            UIHelper.saveLanguageToFile(UIHelper.Language.DE);
                             System.out.println(
                                     Colors.PASTEL_GREEN +
                                             "Sprache auf Deutsch gesetzt." +
