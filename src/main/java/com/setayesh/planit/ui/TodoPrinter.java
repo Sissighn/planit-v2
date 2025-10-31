@@ -1,6 +1,7 @@
 package com.setayesh.planit.ui;
 
-import java.util.ArrayList;
+import java.util.List;
+
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.util.AnsiUtils;
 
@@ -9,15 +10,15 @@ public class TodoPrinter {
     private static final int NUM_WIDTH = 3;
     private static final int TASK_WIDTH = 40;
 
-    public static void printTodoList(ArrayList<Task> tasks) {
+    public static void printTodoList(List<Task> tasks) {
         String placeHolder = Colors.PASTEL_PINK;
         String lineColor = Colors.PASTEL_BROWN;
         String checkColor = Colors.PASTEL_GREEN;
         String reset = Colors.RESET;
 
-        String topLine = lineColor + "╔" + repeat("═", NUM_WIDTH) + "╦" + repeat("═", TASK_WIDTH) + "╗" + reset;
-        String midLine = lineColor + "╠" + repeat("═", NUM_WIDTH) + "╬" + repeat("═", TASK_WIDTH) + "╣" + reset;
-        String lowLine = lineColor + "╚" + repeat("═", NUM_WIDTH) + "╩" + repeat("═", TASK_WIDTH) + "╝" + reset;
+        String topLine = buildLine("╔", "═", "╦", "╗", NUM_WIDTH, TASK_WIDTH);
+        String midLine = buildLine("╠", "═", "╬", "╣", NUM_WIDTH, TASK_WIDTH);
+        String lowLine = buildLine("╚", "═", "╩", "╝", NUM_WIDTH, TASK_WIDTH);
 
         System.out.println(topLine);
         System.out.printf(lineColor + "║%-" + NUM_WIDTH + "s║%-" + TASK_WIDTH + "s║%n" + reset, "", "Task");
@@ -87,6 +88,10 @@ public class TodoPrinter {
 
     private static String repeat(String s, int times) {
         return s.repeat(times);
+    }
+
+    private static String buildLine(String left, String fill, String middle, String right, int width1, int width2) {
+        return Colors.PASTEL_BROWN + left + repeat(fill, width1) + middle + repeat(fill, width2) + right + Colors.RESET;
     }
 
     private static void printButtons(String lineColor, String reset) {
