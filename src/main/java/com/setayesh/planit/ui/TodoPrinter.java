@@ -1,5 +1,6 @@
 package com.setayesh.planit.ui;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import com.setayesh.planit.core.Task;
@@ -9,81 +10,85 @@ public class TodoPrinter {
 
     private static final int NUM_WIDTH = 3;
     private static final int TASK_WIDTH = 40;
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     public static void printTodoList(List<Task> tasks) {
-        String placeHolder = Colors.PASTEL_PINK;
-        String lineColor = Colors.PASTEL_BROWN;
-        String checkColor = Colors.PASTEL_GREEN;
-        String reset = Colors.RESET;
+        if (tasks == null || tasks.isEmpty()) {
+            System.out.println(Colors.PASTEL_YELLOW + "No tasks yet. Add one with option 1." + Colors.RESET);
+            return;
+        }
+
+        Theme theme = Theme.defaultTheme();
 
         String topLine = buildLine("╔", "═", "╦", "╗", NUM_WIDTH, TASK_WIDTH);
         String midLine = buildLine("╠", "═", "╬", "╣", NUM_WIDTH, TASK_WIDTH);
         String lowLine = buildLine("╚", "═", "╩", "╝", NUM_WIDTH, TASK_WIDTH);
 
         System.out.println(topLine);
-        System.out.printf(lineColor + "║%-" + NUM_WIDTH + "s║%-" + TASK_WIDTH + "s║%n" + reset, "", "Task");
+        System.out.printf(theme.line() + "║%-" + NUM_WIDTH + "s║%-" + TASK_WIDTH + "s║%n" + Colors.RESET, "", "Task");
         System.out.println(midLine);
 
         for (int i = 0; i < tasks.size(); i++) {
             Task t = tasks.get(i);
-            String statusSymbol = t.isDone() ? "✔" : " ";
-            String coloredStatus = (t.isDone() ? checkColor : placeHolder) + "[" + statusSymbol + "]" + Colors.RESET;
+            printTaskRow(i + 1, t, TASK_WIDTH, theme);
 
-            String priorityColor;
-            String priorityText;
-            if (t.getPriority() == null) {
-                priorityColor = Colors.PASTEL_BROWN;
-                priorityText = "—";
-            } else {
-                switch (t.getPriority()) {
-                    case HIGH -> {
-                        priorityColor = Colors.PASTEL_RED_URGENT;
-                        priorityText = "HIGH";
-                    }
-                    case MEDIUM -> {
-                        priorityColor = Colors.PASTEL_YELLOW;
-                        priorityText = "MEDIUM";
-                    }
-                    case LOW -> {
-                        priorityColor = Colors.PASTEL_CYAN;
-                        priorityText = "LOW";
-                    }
-                    default -> {
-                        priorityColor = Colors.PASTEL_BROWN;
-                        priorityText = "—";
-                    }
-                }
-            }
-
-            String deadlineStr = (t.getDeadline() != null)
-                    ? t.getDeadline().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"))
-                    : "—";
-
-            String left = coloredStatus + " ";
-            String right = " (" + priorityColor + priorityText + reset + ")  " + deadlineStr;
-            String title = t.getTitle();
-
-            int spaceForTitle = Math.max(0,
-                    TASK_WIDTH - AnsiUtils.visibleLength(left) - AnsiUtils.visibleLength(right));
-
-            String titleShown = title;
-            if (AnsiUtils.visibleLength(titleShown) > spaceForTitle) {
-                int target = Math.max(0, spaceForTitle - 3);
-                titleShown = AnsiUtils.clipVisible(titleShown, target) + (spaceForTitle >= 3 ? "..." : "");
-            }
-
-            String cell = left + titleShown + right;
-            if (AnsiUtils.visibleLength(cell) > TASK_WIDTH)
-                cell = AnsiUtils.clipVisible(cell, TASK_WIDTH);
-            cell = AnsiUtils.padRight(cell, TASK_WIDTH);
-
-            System.out.printf(lineColor + "║%-" + NUM_WIDTH + "d║" + reset + "%s" + lineColor + "║%n" + reset,
-                    i + 1, cell);
         }
 
         System.out.println(lowLine);
-        printButtons(lineColor, reset);
+        MenuPrinter.printMainMenu(theme);
 
+    }
+
+    private static void printTaskRow(int index, Task t, int taskWidth, Theme theme) {
+        String statusSymbol = t.isDone() ? "✔" : " ";
+        String coloredStatus = (t.isDone() ? theme.check() : theme.placeholder()) + statusSymbol + Colors.RESET;
+
+        String priorityText = "—";
+        String priorityColor = theme.line();
+
+        if (t.getPriority() != null) {
+            switch (t.getPriority()) {
+                case HIGH -> {
+                    priorityText = "HIGH";
+                    priorityColor = Colors.PASTEL_RED_URGENT;
+                }
+                case MEDIUM -> {
+                    priorityText = "MEDIUM";
+                    priorityColor = Colors.PASTEL_YELLOW;
+                }
+                case LOW -> {
+                    priorityText = "LOW";
+                    priorityColor = Colors.PASTEL_CYAN;
+                }
+                default -> priorityText = "—";
+            }
+        }
+
+        String deadlineStr = (t.getDeadline() != null)
+                ? t.getDeadline().format(DATE_FMT)
+                : "—";
+
+        String title = (t.getTitle() != null) ? t.getTitle() : "(Untitled)";
+        String left = coloredStatus + " ";
+        String right = " (" + priorityColor + priorityText + Colors.RESET + ")  " + deadlineStr;
+
+        int spaceForTitle = Math.max(0,
+                taskWidth - AnsiUtils.visibleLength(left) - AnsiUtils.visibleLength(right));
+
+        String titleShown = title;
+        if (AnsiUtils.visibleLength(titleShown) > spaceForTitle) {
+            int target = Math.max(0, spaceForTitle - 3);
+            titleShown = AnsiUtils.clipVisible(titleShown, target) + (spaceForTitle >= 3 ? "..." : "");
+        }
+
+        String cell = left + titleShown + right;
+        if (AnsiUtils.visibleLength(cell) > taskWidth)
+            cell = AnsiUtils.clipVisible(cell, taskWidth);
+        cell = AnsiUtils.padRight(cell, taskWidth);
+
+        System.out.printf(
+                theme.line() + "║%-" + NUM_WIDTH + "d║" + Colors.RESET + "%s" + theme.line() + "║%n" + Colors.RESET,
+                index, cell);
     }
 
     private static String repeat(String s, int times) {
@@ -94,63 +99,4 @@ public class TodoPrinter {
         return Colors.PASTEL_BROWN + left + repeat(fill, width1) + middle + repeat(fill, width2) + right + Colors.RESET;
     }
 
-    private static void printButtons(String lineColor, String reset) {
-        String[] buttons = {
-                "1 - Add",
-                "2 - Edit",
-                "3 - Done/Undone",
-                "4 - Delete",
-                "5 - Archive",
-                "6 - View archive",
-                "7 - Clear completed tasks",
-                "8 - Sorting",
-                "9 - Settings",
-                "10 - Exit"
-        };
-
-        int buttonWidth = 0;
-        for (String b : buttons)
-            if (b.length() > buttonWidth)
-                buttonWidth = b.length();
-        buttonWidth += 4;
-        int consoleWidth = getConsoleWidth();
-        if (consoleWidth <= 0)
-            consoleWidth = 80;
-
-        // Approximate how many buttons fit in one line
-        int buttonsPerLine = Math.max(1, consoleWidth / (buttonWidth + 2));
-
-        // Print in multiple rows if needed
-        for (int i = 0; i < buttons.length; i += buttonsPerLine) {
-            int end = Math.min(i + buttonsPerLine, buttons.length);
-
-            // top border
-            for (int j = i; j < end; j++)
-                System.out.print(lineColor + "╔" + "═".repeat(buttonWidth) + "╗ " + reset);
-            System.out.println();
-
-            // text
-            for (int j = i; j < end; j++) {
-                String b = buttons[j];
-                System.out.print(lineColor + "║ " + b + " ".repeat(buttonWidth - b.length() - 1) + "║ " + reset);
-            }
-            System.out.println();
-
-            // bottom border
-            for (int j = i; j < end; j++)
-                System.out.print(lineColor + "╚" + "═".repeat(buttonWidth) + "╝ " + reset);
-            System.out.println("\n");
-        }
-    }
-
-    // Helper: try to detect terminal width dynamically
-    private static int getConsoleWidth() {
-        try {
-            String columns = System.getenv("COLUMNS");
-            if (columns != null)
-                return Integer.parseInt(columns);
-        } catch (NumberFormatException ignored) {
-        }
-        return 0;
-    }
 }
