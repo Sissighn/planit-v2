@@ -1,7 +1,7 @@
 package com.setayesh.planit.core;
 
 public enum Priority {
-    LOW,
+    HIGH,
     MEDIUM,
-    HIGH
+    LOW
 }

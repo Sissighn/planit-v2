@@ -16,5 +16,4 @@ public class Colors {
     public static final String PASTEL_RED = "\u001B[38;5;131m";
     public static final String PASTEL_RED_URGENT = "\u001b[38;2;210;58;58m";
     public static final String PASTEL_GREEN = "\u001B[38;5;120m";
-
 }

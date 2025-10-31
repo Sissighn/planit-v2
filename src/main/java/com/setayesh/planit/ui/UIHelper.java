@@ -107,7 +107,6 @@ public class UIHelper {
         if (total <= 0)
             total = 1;
 
-        // Prozentanteile
         double archivedPercent = (archived * 100.0 / total);
         double completedPercent = (completed * 100.0 / total);
         double totalPercent = 100.0;
