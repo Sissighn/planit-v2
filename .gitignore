@@ -1,14 +1,14 @@
-# macOS system files
+# Build / IDE
+target/
+*.iml
+.idea/
+*.log
+*.tmp
+*.bak
+
+# macOS
 .DS_Store
 
-# Maven build output (target folder)
-target/
-
-# IDE / Editor specific
-.idea/
-*.iml
-.vscode/
-
-# Logs
-*.log
+# Maven Shade
+dependency-reduced-pom.xml
 
