@@ -1,7 +1,7 @@
 package com.setayesh.planit;
 
 import com.setayesh.planit.core.Task;
-import com.setayesh.planit.storage.JsonTaskRepository;
+import com.setayesh.planit.storage.TaskRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,21 +9,17 @@ import java.util.List;
 /**
  * Fake in-memory repository for testing TaskService without touching files.
  */
-public class InMemoryTaskRepository extends JsonTaskRepository {
+public class InMemoryTaskRepository implements TaskRepository {
     private final List<Task> tasks = new ArrayList<>();
     private final List<Task> archived = new ArrayList<>();
 
-    public InMemoryTaskRepository() {
-        super("dummy-path"); // Call parent constructor if needed
-    }
-
     @Override
-    public List<Task> load() {
+    public List<Task> findAll() {
         return new ArrayList<>(tasks);
     }
 
     @Override
-    public void save(List<Task> all) {
+    public void saveAll(List<Task> all) {
         tasks.clear();
         tasks.addAll(all);
     }
@@ -36,6 +32,7 @@ public class InMemoryTaskRepository extends JsonTaskRepository {
     @Override
     public void saveArchive(List<Task> all) {
         archived.clear();
-        archived.addAll(all);
+        if (all != null)
+            archived.addAll(all);
     }
 }

@@ -125,4 +125,17 @@ class TaskServiceTest {
         assertTrue(remaining.stream().anyMatch(Task::isArchived),
                 "Archived done tasks should remain");
     }
+
+    @Test
+    void addTask_shouldPersistInMemoryRepo() {
+        InMemoryTaskRepository repo = new InMemoryTaskRepository();
+        TaskService service = new TaskService(repo);
+
+        Task t = new Task("Test Task", LocalDate.now(), Priority.HIGH);
+        service.addTask(t);
+
+        assertEquals(1, repo.findAll().size());
+        assertEquals("Test Task", repo.findAll().get(0).getTitle());
+    }
+
 }

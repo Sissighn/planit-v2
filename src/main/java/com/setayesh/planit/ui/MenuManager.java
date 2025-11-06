@@ -69,6 +69,8 @@ public class MenuManager {
     }
 
     private void editTask() {
+        UIHelper.printHeader(UIHelper.t("edit_title"));
+
         List<Task> tasks = service.getAll();
         if (tasks.isEmpty()) {
             System.out.println(Colors.PASTEL_YELLOW + UIHelper.t("no_tasks") + Colors.RESET);
@@ -76,7 +78,7 @@ public class MenuManager {
         }
 
         TodoPrinter.printTodoList(tasks);
-        int index = input.readIndex(UIHelper.t("enter_number_edit"), tasks.size(), false);
+        int index = input.readIndex(UIHelper.t("edit_choose"), tasks.size(), false);
         if (index == -1)
             return;
 

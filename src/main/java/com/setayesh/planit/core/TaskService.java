@@ -1,6 +1,6 @@
 package com.setayesh.planit.core;
 
-import com.setayesh.planit.storage.JsonTaskRepository;
+import com.setayesh.planit.storage.TaskRepository;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -11,12 +11,12 @@ import java.util.*;
  * Works with the JsonTaskRepository for persistent storage.
  */
 public class TaskService {
-    private final JsonTaskRepository repo;
+    private final TaskRepository repo;
     private final List<Task> tasks;
 
-    public TaskService(JsonTaskRepository repo) {
+    public TaskService(TaskRepository repo) {
         this.repo = repo;
-        this.tasks = new ArrayList<>(repo.load());
+        this.tasks = new ArrayList<>(repo.findAll());
     }
 
     // BASIC CRUD
@@ -134,7 +134,7 @@ public class TaskService {
 
     // STORAGE
     public void save() {
-        repo.save(tasks);
+        repo.saveAll(tasks);
     }
 
     // UTIL

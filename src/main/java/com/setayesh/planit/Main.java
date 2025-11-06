@@ -18,7 +18,7 @@ public class Main {
 
         String baseDirPath = System.getProperty("user.home") + File.separator + ".planit";
 
-        JsonTaskRepository repo = new JsonTaskRepository(baseDirPath);
+        TaskRepository repo = new JsonTaskRepository(baseDirPath);
         TaskService service = new TaskService(repo);
         ConsoleUI ui = new ConsoleUI(service);
 

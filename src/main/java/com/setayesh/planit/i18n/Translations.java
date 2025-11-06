@@ -71,10 +71,6 @@ public class Translations {
                                 "Select a task to edit:",
                                 "Wähle eine Aufgabe zum Bearbeiten:"
                 });
-                texts.put("edit_enter_num", new String[] {
-                                "Enter the number of the task: ",
-                                "Gib die Nummer der Aufgabe ein: "
-                });
                 texts.put("edit_new_title", new String[] {
                                 "New title (press Enter to skip): ",
                                 "Neuer Titel (Enter zum Überspringen): "

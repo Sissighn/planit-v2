@@ -1,6 +1,7 @@
 package com.setayesh.planit;
 
 import com.setayesh.planit.storage.JsonTaskRepository;
+import com.setayesh.planit.storage.TaskRepository;
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.Priority;
 import org.junit.jupiter.api.*;
@@ -19,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class JsonTaskRepositoryTest {
 
     private Path tempDir;
-    private JsonTaskRepository repo;
+    private TaskRepository repo;
 
     @BeforeEach
     void setup() throws IOException {
@@ -48,9 +49,9 @@ class JsonTaskRepositoryTest {
         Task t1 = new Task("Task 1", LocalDate.now(), Priority.HIGH);
         Task t2 = new Task("Task 2", LocalDate.now().plusDays(1), Priority.LOW);
 
-        repo.save(List.of(t1, t2));
+        repo.saveAll(List.of(t1, t2));
 
-        List<Task> loaded = repo.load();
+        List<Task> loaded = repo.findAll();
 
         assertEquals(2, loaded.size());
         assertEquals("Task 1", loaded.get(0).getTitle());
@@ -72,7 +73,7 @@ class JsonTaskRepositoryTest {
 
     @Test
     void load_shouldReturnEmptyListWhenFileMissing() {
-        List<Task> loaded = repo.load();
+        List<Task> loaded = repo.findAll();
         assertNotNull(loaded);
         assertTrue(loaded.isEmpty(), "Missing file should produce empty list");
     }
@@ -82,7 +83,7 @@ class JsonTaskRepositoryTest {
         File badFile = new File(tempDir.toFile(), "planit_tasks.json");
         Files.writeString(badFile.toPath(), "{ invalid json");
 
-        List<Task> result = repo.load();
+        List<Task> result = repo.findAll();
 
         assertTrue(result.isEmpty(), "Corrupt file should result in empty list");
         File backup = new File(tempDir.toFile(), "planit_tasks.json.corrupted");
@@ -93,7 +94,7 @@ class JsonTaskRepositoryTest {
     void write_shouldReplaceOldFileWithTemp() throws IOException {
         // Erstes Speichern
         Task t = new Task("Temp Test", null, Priority.LOW);
-        repo.save(List.of(t));
+        repo.saveAll(List.of(t));
 
         File mainFile = new File(tempDir.toFile(), "planit_tasks.json");
         File tempFile = new File(tempDir.toFile(), "planit_tasks.json.tmp");

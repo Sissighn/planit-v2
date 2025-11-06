@@ -14,7 +14,7 @@ import java.util.ArrayList;
 /**
  * Handles reading and writing Task data to a local JSON file safely.
  */
-public class JsonTaskRepository {
+public class JsonTaskRepository implements TaskRepository {
     private final File tasksFile;
     private final File archiveFile;
     private final ObjectMapper mapper = new ObjectMapper()
@@ -31,32 +31,35 @@ public class JsonTaskRepository {
             dir.mkdirs();
     }
 
-    public List<Task> load() {
+    @Override
+    public List<Task> findAll() {
         return readList(tasksFile);
     }
 
-    public void save(List<Task> tasks) {
+    @Override
+    public void saveAll(List<Task> tasks) {
         writeList(tasksFile, tasks);
     }
 
+    @Override
     public List<Task> loadArchive() {
         return readList(archiveFile);
     }
 
+    @Override
     public void saveArchive(List<Task> archive) {
         writeList(archiveFile, archive);
     }
 
+    // --- Internal helpers ---
     private List<Task> readList(File file) {
         try {
-            if (!file.exists()) {
+            if (!file.exists())
                 return new ArrayList<>();
-            }
             return mapper.readValue(file, new TypeReference<List<Task>>() {
             });
         } catch (IOException e) {
             System.err.println("⚠️ Error reading " + file.getName() + ": " + e.getMessage());
-
             try {
                 File backup = new File(file.getParent(), file.getName() + ".corrupted");
                 Files.copy(file.toPath(), backup.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -65,22 +68,18 @@ public class JsonTaskRepository {
             } catch (IOException ex) {
                 System.err.println("⚠️ Failed to create backup: " + ex.getMessage());
             }
-
             return new ArrayList<>();
         }
     }
 
     private void writeList(File file, List<Task> tasks) {
         File temp = new File(file.getAbsolutePath() + ".tmp");
-
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(temp, tasks);
-
             Files.move(temp.toPath(), file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-
         } catch (IOException e) {
             System.err.println("⚠️ Error saving " + file.getName() + ": " + e.getMessage());
-            temp.delete(); // temp-Datei aufräumen, falls etwas schiefging
+            temp.delete();
         }
     }
 }
