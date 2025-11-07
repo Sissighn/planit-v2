@@ -3,6 +3,7 @@ package com.setayesh.planit.ui;
 import com.setayesh.planit.core.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 public class MenuManager {
     private final TaskService service;
@@ -59,6 +60,7 @@ public class MenuManager {
         };
     }
 
+    // ---------- CRUD ----------
     private void addTask() {
         String title = input.readNonEmpty(UIHelper.t("enter_new"));
         LocalDate deadline = input.readDate(UIHelper.t("add_deadline"));
@@ -82,11 +84,14 @@ public class MenuManager {
         if (index == -1)
             return;
 
+        Task selected = tasks.get(index);
+        UUID id = selected.getId();
+
         String title = input.readLine("New title (empty = keep): ");
         LocalDate deadline = input.readDate("New deadline (dd.MM.yyyy or empty): ");
         Priority priority = input.readPriority("New priority (1=HIGH, 2=MEDIUM, 3=LOW, empty=keep): ");
 
-        service.editTask(index, title, deadline, priority);
+        service.editTask(id, title, deadline, priority);
         System.out.println(Colors.PASTEL_GREEN + UIHelper.t("task_updated") + Colors.RESET);
     }
 
@@ -102,11 +107,13 @@ public class MenuManager {
         if (index == -1)
             return;
 
-        Task t = tasks.get(index);
-        if (t.isDone())
-            service.markUndone(index);
+        Task selected = tasks.get(index);
+        UUID id = selected.getId();
+
+        if (selected.isDone())
+            service.markUndone(id);
         else
-            service.markDone(index);
+            service.markDone(id);
 
         System.out.println(Colors.PASTEL_GREEN + UIHelper.t("marked_done") + Colors.RESET);
     }
@@ -123,7 +130,9 @@ public class MenuManager {
         if (index == -1)
             return;
 
-        service.deleteTask(index);
+        UUID id = tasks.get(index).getId();
+        service.deleteTask(id);
+
         System.out.println(Colors.PASTEL_GREEN + UIHelper.t("task_deleted") + Colors.RESET);
     }
 
@@ -141,7 +150,9 @@ public class MenuManager {
             return;
         }
 
-        service.archiveTask(index);
+        UUID id = tasks.get(index).getId();
+        service.archiveTask(id);
+
         System.out.println(Colors.PASTEL_GREEN + UIHelper.t("archived_success") + Colors.RESET);
     }
 
@@ -163,6 +174,7 @@ public class MenuManager {
         System.out.println(Colors.PASTEL_GREEN + UIHelper.t("tasks_cleared") + Colors.RESET);
     }
 
+    // ---------- Sorting & Settings ----------
     private void sortTasks() {
         System.out.println("""
                 Sort by:

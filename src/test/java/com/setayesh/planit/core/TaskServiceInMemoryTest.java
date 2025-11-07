@@ -35,25 +35,22 @@ class TaskServiceInMemoryTest {
     }
 
     @Test
-    void toggleDoneShouldPersist() {
-        Task t1 = new Task("Toggle me");
-        service.addTask(t1);
+    void markDoneByIdShouldPersist() {
+        Task t = new Task("Finish planit refactor");
+        service.addTask(t);
 
-        service.markDone(0); // flip done state
-        assertTrue(repo.findAll().get(0).isDone(), "Repository should reflect done state after toggle");
+        service.markDone(t.getId());
+
+        assertTrue(repo.findAll().get(0).isDone(), "Task should be marked done using ID");
     }
 
     @Test
-    void deleteRemovesTaskFromRepo() {
-        Task t1 = new Task("Temp");
-        service.addTask(t1);
+    void deleteByIdShouldRemoveTask() {
+        Task t = new Task("Temporary");
+        service.addTask(t);
 
-        // Suppose you add a delete(index) method in service later
-        // For now, simulate removal manually
-        List<Task> current = repo.findAll();
-        current.remove(0);
-        repo.saveAll(current);
+        service.deleteTask(t.getId());
 
-        assertEquals(0, repo.findAll().size(), "Task should be removed from repo");
+        assertTrue(repo.findAll().isEmpty(), "Task should be deleted by ID");
     }
 }

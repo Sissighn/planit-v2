@@ -15,13 +15,13 @@ public class TaskService {
     private final List<Task> tasks;
 
     public TaskService(TaskRepository repo) {
-        this.repo = repo;
+        this.repo = Objects.requireNonNull(repo);
         this.tasks = new ArrayList<>(repo.findAll());
     }
 
     // BASIC CRUD
     public List<Task> getAll() {
-        return tasks;
+        return Collections.unmodifiableList(tasks);
     }
 
     public void addTask(Task task) {
@@ -29,98 +29,78 @@ public class TaskService {
         save();
     }
 
-    public void deleteTask(int index) {
-        if (index < 0 || index >= tasks.size()) {
-            System.out.println("⚠️ Invalid index.");
-            return;
-        }
-        tasks.remove(index);
+    public void deleteTask(UUID id) {
+        tasks.removeIf(t -> t.getId().equals(id));
         save();
     }
 
-    public void markDone(int index) {
-        if (index < 0 || index >= tasks.size()) {
-            System.out.println("⚠️ Invalid index.");
-            return;
-        }
-        Task task = tasks.get(index);
-        task.markDone();
-        save();
+    public void markDone(UUID id) {
+        tasks.stream()
+                .filter(t -> t.getId().equals(id))
+                .findFirst()
+                .ifPresent(t -> {
+                    t.markDone();
+                    save();
+                });
     }
 
-    public void markUndone(int index) {
-        if (index < 0 || index >= tasks.size()) {
-            System.out.println("⚠️ Invalid index.");
-            return;
-        }
-        Task task = tasks.get(index);
-        task.markUndone();
-        save();
+    public void markUndone(UUID id) {
+        tasks.stream()
+                .filter(t -> t.getId().equals(id))
+                .findFirst()
+                .ifPresent(t -> {
+                    t.markUndone();
+                    save();
+                });
     }
 
-    public void editTask(int index, String newTitle, LocalDate newDeadline, Priority newPriority) {
-        if (index < 0 || index >= tasks.size()) {
-            System.out.println("⚠️ Invalid index.");
-            return;
-        }
-        Task task = tasks.get(index);
-        if (newTitle != null && !newTitle.trim().isEmpty()) {
-            task.setTitle(newTitle.trim());
-        }
-        if (newDeadline != null) {
-            task.setDeadline(newDeadline);
-        }
-        if (newPriority != null) {
-            task.setPriority(newPriority);
-        }
-        save();
+    public void editTask(UUID id, String newTitle, LocalDate newDeadline, Priority newPriority) {
+        tasks.stream()
+                .filter(t -> t.getId().equals(id))
+                .findFirst()
+                .ifPresent(task -> {
+                    if (newTitle != null && !newTitle.trim().isEmpty())
+                        task.setTitle(newTitle.trim());
+                    if (newDeadline != null)
+                        task.setDeadline(newDeadline);
+                    if (newPriority != null)
+                        task.setPriority(newPriority);
+                    save();
+                });
+    }
+
+    public Optional<Task> findById(UUID id) {
+        return tasks.stream().filter(t -> t.getId().equals(id)).findFirst();
     }
 
     // SORTING
     public void sortByDeadline() {
-        tasks.sort((a, b) -> {
-            if (a.getDeadline() == null && b.getDeadline() == null)
-                return 0;
-            if (a.getDeadline() == null)
-                return 1;
-            if (b.getDeadline() == null)
-                return -1;
-            return a.getDeadline().compareTo(b.getDeadline());
-        });
+        tasks.sort(Comparator.comparing(Task::getDeadline,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+        save();
     }
 
     public void sortByPriority() {
-        tasks.sort((a, b) -> {
-            if (a.getPriority() == null && b.getPriority() == null)
-                return 0;
-            if (a.getPriority() == null)
-                return 1;
-            if (b.getPriority() == null)
-                return -1;
-            return a.getPriority().compareTo(b.getPriority());
-        });
-
+        tasks.sort(Comparator.comparing(Task::getPriority,
+                Comparator.nullsLast(Comparator.naturalOrder())));
         save();
     }
 
     public void sortByTitle() {
-        tasks.sort((a, b) -> a.getTitle().compareToIgnoreCase(b.getTitle()));
+        tasks.sort(Comparator.comparing(Task::getTitle, String.CASE_INSENSITIVE_ORDER));
         save();
     }
 
     // Archive
-    public void archiveTask(int index) {
-        if (index < 0 || index >= tasks.size())
-            return;
-        Task t = tasks.get(index);
-        t.setArchived(true);
-
-        List<Task> archived = new ArrayList<>(repo.loadArchive());
-        archived.add(t);
-
-        tasks.remove(index);
-        repo.saveArchive(archived);
-        save();
+    public void archiveTask(UUID id) {
+        findById(id).ifPresent(t -> {
+            t.setArchived(true);
+            List<Task> archived = new ArrayList<>(repo.loadArchive());
+            archived.add(t);
+            tasks.removeIf(task -> task.getId().equals(id));
+            repo.saveArchive(archived);
+            save();
+        });
     }
 
     public List<Task> loadArchive() {

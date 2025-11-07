@@ -1,31 +1,81 @@
 package com.setayesh.planit.core;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.UUID;
 
-public class Task {
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public final class Task {
+    private final UUID id;
     private String title;
     private LocalDate deadline;
     private Priority priority;
     private boolean done;
     private boolean archived;
+    private final LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
+    // --- Constructors ---
+
+    // Default constructor for Jackson (and manual creation with defaults).
     public Task() {
+        this.id = UUID.randomUUID();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        this.done = false;
+        this.archived = false;
     }
 
+    // Minimal constructor with title only.
+    public Task(String title) {
+        this();
+        if (title == null || title.trim().isEmpty())
+            throw new IllegalArgumentException("Task title cannot be empty.");
+        this.title = title.trim();
+    }
+
+    // Full constructor for explicit task creation.
     public Task(String title, LocalDate deadline, Priority priority) {
+        this(); // sets id, timestamps, defaults
+
+        if (title == null || title.trim().isEmpty())
+            throw new IllegalArgumentException("Task title cannot be empty.");
+
+        this.title = title.trim();
+        this.deadline = deadline;
+        this.priority = priority;
+    }
+
+    // Jackson constructor for JSON deserialization
+    @JsonCreator
+    public Task(
+            @JsonProperty("id") UUID id,
+            @JsonProperty("title") String title,
+            @JsonProperty("deadline") LocalDate deadline,
+            @JsonProperty("priority") Priority priority,
+            @JsonProperty("done") boolean done,
+            @JsonProperty("archived") boolean archived,
+            @JsonProperty("createdAt") LocalDateTime createdAt,
+            @JsonProperty("updatedAt") LocalDateTime updatedAt) {
+        this.id = (id != null) ? id : UUID.randomUUID();
         this.title = title;
         this.deadline = deadline;
         this.priority = priority;
-        this.done = false;
-        this.archived = false;
-
+        this.done = done;
+        this.archived = archived;
+        this.createdAt = (createdAt != null) ? createdAt : LocalDateTime.now();
+        this.updatedAt = (updatedAt != null) ? updatedAt : LocalDateTime.now();
     }
 
-    public Task(String title) {
-        this(title, null, Priority.MEDIUM);
+    // --- Getters ---
+
+    public UUID getId() {
+        return id;
     }
 
-    // Getters & Setters
     public String getTitle() {
         return title;
     }
@@ -46,31 +96,69 @@ public class Task {
         return archived;
     }
 
-    // Done/Undone
-    public void markDone() {
-        this.done = true;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 
-    public void markUndone() {
-        this.done = false;
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 
-    // Setters for Edit
+    // --- Mutators ---
+
     public void setTitle(String title) {
-        this.title = title;
+        if (title == null || title.trim().isEmpty())
+            throw new IllegalArgumentException("Task title cannot be empty.");
+        this.title = title.trim();
+        touch();
     }
 
     public void setDeadline(LocalDate deadline) {
         this.deadline = deadline;
+        touch();
     }
 
     public void setPriority(Priority priority) {
         this.priority = priority;
+        touch();
     }
 
-    // Setter for Archive
     public void setArchived(boolean archived) {
         this.archived = archived;
+        touch();
+    }
+
+    // --- State changes ---
+
+    public void markDone() {
+        this.done = true;
+        touch();
+    }
+
+    public void markUndone() {
+        this.done = false;
+        touch();
+    }
+
+    // --- Helpers ---
+
+    private void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (!(o instanceof Task))
+            return false;
+        Task task = (Task) o;
+        return id.equals(task.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
     @Override

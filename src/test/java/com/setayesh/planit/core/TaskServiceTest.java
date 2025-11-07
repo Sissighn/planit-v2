@@ -4,6 +4,7 @@ import com.setayesh.planit.storage.InMemoryTaskRepository;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,12 +21,13 @@ class TaskServiceTest {
         var task = new Task("Learn Java", LocalDate.now(), Priority.HIGH);
         service.addTask(task);
 
-        assertEquals(1, service.size());
-        assertEquals("Learn Java", service.get(0).getTitle());
+        var all = service.getAll();
+        assertEquals(1, all.size());
+        assertEquals("Learn Java", all.get(0).getTitle());
     }
 
     @Test
-    void deleteTask_shouldRemoveByIndex() {
+    void deleteTask_shouldRemoveById() {
         var repo = new InMemoryTaskRepository();
         var service = new TaskService(repo);
 
@@ -34,9 +36,11 @@ class TaskServiceTest {
         service.addTask(t1);
         service.addTask(t2);
 
-        service.deleteTask(0);
-        assertEquals(1, service.size());
-        assertEquals("Task 2", service.get(0).getTitle());
+        service.deleteTask(t1.getId());
+        var remaining = service.getAll();
+
+        assertEquals(1, remaining.size());
+        assertEquals("Task 2", remaining.get(0).getTitle());
     }
 
     @Test
@@ -47,8 +51,10 @@ class TaskServiceTest {
         var task = new Task("Finish homework", null, Priority.LOW);
         service.addTask(task);
 
-        service.markDone(0);
-        assertTrue(service.get(0).isDone());
+        service.markDone(task.getId());
+
+        var stored = service.findById(task.getId()).orElseThrow();
+        assertTrue(stored.isDone());
     }
 
     @Test
@@ -59,28 +65,28 @@ class TaskServiceTest {
         var task = new Task("Old Title", null, Priority.LOW);
         service.addTask(task);
 
-        service.editTask(0, "New Title", LocalDate.of(2025, 11, 1), Priority.HIGH);
+        UUID id = task.getId();
+        service.editTask(id, "New Title", LocalDate.of(2025, 11, 1), Priority.HIGH);
 
-        var updated = service.get(0);
+        var updated = service.findById(id).orElseThrow();
         assertEquals("New Title", updated.getTitle());
         assertEquals(LocalDate.of(2025, 11, 1), updated.getDeadline());
         assertEquals(Priority.HIGH, updated.getPriority());
     }
 
-    @Test
     void sortByTitle_shouldSortAlphabetically() {
         var repo = new InMemoryTaskRepository();
         var service = new TaskService(repo);
 
         service.addTask(new Task("Zebra", null, Priority.LOW));
         service.addTask(new Task("Apple", null, Priority.HIGH));
+
         service.sortByTitle();
+        var all = service.getAll();
 
-        assertEquals("Apple", service.get(0).getTitle());
-        assertEquals("Zebra", service.get(1).getTitle());
+        assertEquals("Apple", all.get(0).getTitle());
+        assertEquals("Zebra", all.get(1).getTitle());
     }
-
-    // --- Additional Tests ---
 
     @Test
     void archiveTask_shouldMoveToArchiveList() {
@@ -90,7 +96,7 @@ class TaskServiceTest {
         var t = new Task("Archive Me", null, Priority.MEDIUM);
         service.addTask(t);
 
-        service.archiveTask(0);
+        service.archiveTask(t.getId());
 
         assertTrue(repo.loadArchive().stream()
                 .anyMatch(a -> a.getTitle().equals("Archive Me")));
