@@ -1,10 +1,8 @@
-package com.setayesh.planit;
+package com.setayesh.planit.ui;
 
-import com.setayesh.planit.ui.UIHelper;
 import com.setayesh.planit.ui.UIHelper.Language;
 import com.setayesh.planit.ui.UIHelper.DashboardMode;
 import com.setayesh.planit.settings.*;
-import com.setayesh.planit.i18n.Translations;
 import org.junit.jupiter.api.*;
 
 import java.io.ByteArrayOutputStream;

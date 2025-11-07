@@ -21,6 +21,10 @@ public class Task {
 
     }
 
+    public Task(String title) {
+        this(title, null, Priority.MEDIUM);
+    }
+
     // Getters & Setters
     public String getTitle() {
         return title;

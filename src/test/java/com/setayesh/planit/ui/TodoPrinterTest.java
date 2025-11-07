@@ -1,6 +1,5 @@
-package com.setayesh.planit;
+package com.setayesh.planit.ui;
 
-import com.setayesh.planit.ui.TodoPrinter;
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.Priority;
 import org.junit.jupiter.api.*;

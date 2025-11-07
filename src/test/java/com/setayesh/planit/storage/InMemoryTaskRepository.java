@@ -1,8 +1,6 @@
-package com.setayesh.planit;
+package com.setayesh.planit.storage;
 
 import com.setayesh.planit.core.Task;
-import com.setayesh.planit.storage.TaskRepository;
-
 import java.util.ArrayList;
 import java.util.List;
 

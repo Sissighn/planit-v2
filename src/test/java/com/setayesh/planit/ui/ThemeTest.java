@@ -1,7 +1,5 @@
-package com.setayesh.planit;
+package com.setayesh.planit.ui;
 
-import com.setayesh.planit.ui.Theme;
-import com.setayesh.planit.ui.Colors;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

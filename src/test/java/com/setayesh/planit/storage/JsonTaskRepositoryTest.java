@@ -1,7 +1,5 @@
-package com.setayesh.planit;
+package com.setayesh.planit.storage;
 
-import com.setayesh.planit.storage.JsonTaskRepository;
-import com.setayesh.planit.storage.TaskRepository;
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.Priority;
 import org.junit.jupiter.api.*;

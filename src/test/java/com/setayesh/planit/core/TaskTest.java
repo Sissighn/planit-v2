@@ -1,7 +1,5 @@
-package com.setayesh.planit;
+package com.setayesh.planit.core;
 
-import com.setayesh.planit.core.Task;
-import com.setayesh.planit.core.Priority;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
