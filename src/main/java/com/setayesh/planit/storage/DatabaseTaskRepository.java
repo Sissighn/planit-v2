@@ -11,15 +11,25 @@ import java.util.*;
 public class DatabaseTaskRepository implements TaskRepository {
 
     private static final String DB_PATH = System.getProperty("user.dir") + "/planit_db"; // <-- absolute Pfadangabe
-    private static final String URL = "jdbc:h2:file:" + DB_PATH + ";AUTO_SERVER=TRUE";
     private static final String USER = "sa";
     private static final String PASSWORD = "";
+    private static final String URL;
+
+    static {
+        if (System.getenv("GITHUB_ACTIONS") != null) {
+            URL = "jdbc:h2:mem:planit;DB_CLOSE_DELAY=-1";
+            System.out.println("🏗 Running in GitHub Actions CI → using in-memory H2 database");
+        } else {
+            String dbPath = System.getProperty("user.dir") + "/planit_db";
+            URL = "jdbc:h2:file:" + dbPath + ";AUTO_SERVER=TRUE";
+            System.out.println("💾 Running locally → using file-based H2 database");
+        }
+    }
 
     public DatabaseTaskRepository() {
         System.out.println("🗂 DatabaseTaskRepository initialized");
         System.out.println("📁 H2 URL = " + URL);
         System.out.println("📂 Working directory = " + System.getProperty("user.dir"));
-        initDatabase();
         initDatabase();
     }
 
