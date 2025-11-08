@@ -1,6 +1,6 @@
 package com.setayesh.planit;
 
-import java.io.File;
+import java.util.List;
 
 import com.setayesh.planit.core.*;
 import com.setayesh.planit.storage.*;
@@ -16,12 +16,24 @@ public class Main {
 
         UIHelper.loadSettings();
 
-        String baseDirPath = System.getProperty("user.home") + File.separator + ".planit";
-
-        TaskRepository repo = new JsonTaskRepository(baseDirPath);
+        TaskRepository repo = new DatabaseTaskRepository();
         TaskService service = new TaskService(repo);
-        ConsoleUI ui = new ConsoleUI(service);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                service.save();
 
+                List<Task> archive = service.loadArchive(); // aus DB oder JSON holen
+                if (archive != null && !archive.isEmpty()) {
+                    repo.saveArchive(archive);
+                }
+
+                System.out.println("✅ All data saved safely.");
+            } catch (Exception e) {
+                System.err.println("⚠️ Error while saving on exit: " + e.getMessage());
+            }
+        }));
+
+        ConsoleUI ui = new ConsoleUI(service);
         ui.start();
     }
 }
