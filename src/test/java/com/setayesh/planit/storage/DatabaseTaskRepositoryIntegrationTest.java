@@ -34,7 +34,7 @@ class DatabaseTaskRepositoryIntegrationTest {
 
         List<Task> loaded = repo.findAll();
         assertEquals(2, loaded.size(), "Should read back two tasks");
-        assertTrue(loaded.stream().anyMatch(t -> t.getTitle().equals("Read Bible")));
+        assertTrue(loaded.stream().anyMatch(t -> t.getTitle().equals("111")));
         assertTrue(loaded.stream().anyMatch(t -> t.getPriority() == Priority.MEDIUM));
     }
 
