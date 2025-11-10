@@ -10,7 +10,6 @@ import java.util.*;
 
 public class DatabaseTaskRepository implements TaskRepository {
 
-    private static final String DB_PATH = System.getProperty("user.dir") + "/planit_db"; // <-- absolute Pfadangabe
     private static final String USER = "sa";
     private static final String PASSWORD = "";
     private static final String URL;
@@ -159,7 +158,7 @@ public class DatabaseTaskRepository implements TaskRepository {
                 ps.executeBatch();
             }
 
-            conn.commit(); // <-- Änderungen dauerhaft speichern
+            conn.commit();
 
         } catch (SQLException e) {
             System.err.println("⚠️ Error saving to " + table + ": " + e.getMessage());
