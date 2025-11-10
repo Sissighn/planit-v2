@@ -2,7 +2,8 @@ package com.setayesh.planit.api;
 
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.TaskService;
-import com.setayesh.planit.storage.DatabaseTaskRepository;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,9 +15,9 @@ public class TaskController {
 
     private final TaskService service;
 
-    public TaskController() {
-        // ⚙️ Temporär direkte Instanziierung (später Dependency Injection)
-        this.service = new TaskService(new DatabaseTaskRepository());
+    @Autowired
+    public TaskController(TaskService service) {
+        this.service = service;
     }
 
     @GetMapping

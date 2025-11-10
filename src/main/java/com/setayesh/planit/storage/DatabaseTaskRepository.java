@@ -3,37 +3,53 @@ package com.setayesh.planit.storage;
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.Priority;
 
+import org.springframework.stereotype.Repository;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
+@Repository
 public class DatabaseTaskRepository implements TaskRepository {
 
     private static final String USER = "sa";
     private static final String PASSWORD = "";
-    private static final String URL;
-
-    static {
-        if (System.getenv("GITHUB_ACTIONS") != null) {
-            URL = "jdbc:h2:mem:planit;DB_CLOSE_DELAY=-1";
-            System.out.println("🏗 Running in GitHub Actions CI → using in-memory H2 database");
-        } else {
-            String dbPath = System.getProperty("user.dir") + "/planit_db";
-            URL = "jdbc:h2:file:" + dbPath + ";AUTO_SERVER=TRUE";
-            System.out.println("💾 Running locally → using file-based H2 database");
-        }
-    }
+    private final String url;
 
     public DatabaseTaskRepository() {
-        System.out.println("🗂 DatabaseTaskRepository initialized");
-        System.out.println("📁 H2 URL = " + URL);
-        System.out.println("📂 Working directory = " + System.getProperty("user.dir"));
+        this.url = resolveUrl(null);
+        logInit();
         initDatabase();
     }
 
+    public DatabaseTaskRepository(String customDbPath) {
+        this.url = resolveUrl(customDbPath);
+        logInit();
+        initDatabase();
+    }
+
+    private String resolveUrl(String customPath) {
+        if (System.getenv("GITHUB_ACTIONS") != null) {
+            System.out.println("🏗 Running in GitHub Actions CI → using in-memory H2 database");
+            return "jdbc:h2:mem:planit;DB_CLOSE_DELAY=-1";
+        } else if (customPath != null) {
+            System.out.println("🧪 Running test database at: " + customPath);
+            return "jdbc:h2:file:" + customPath + ";AUTO_SERVER=TRUE";
+        } else {
+            String dbPath = System.getProperty("user.dir") + "/planit_db";
+            System.out.println("💾 Running locally → using file-based H2 database");
+            return "jdbc:h2:file:" + dbPath + ";AUTO_SERVER=TRUE";
+        }
+    }
+
+    private void logInit() {
+        System.out.println("🗂 DatabaseTaskRepository initialized");
+        System.out.println("📁 H2 URL = " + url);
+        System.out.println("📂 Working directory = " + System.getProperty("user.dir"));
+    }
+
     private void initDatabase() {
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
                 Statement stmt = conn.createStatement()) {
 
             // Active tasks
@@ -99,7 +115,7 @@ public class DatabaseTaskRepository implements TaskRepository {
         List<Task> tasks = new ArrayList<>();
 
         String sql = "SELECT * FROM " + table;
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD);
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -136,7 +152,7 @@ public class DatabaseTaskRepository implements TaskRepository {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """.formatted(table);
 
-        try (Connection conn = DriverManager.getConnection(URL, USER, PASSWORD)) {
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD)) {
             conn.setAutoCommit(false); // <-- Transaktionsmodus aktivieren
 
             try (Statement stmt = conn.createStatement()) {

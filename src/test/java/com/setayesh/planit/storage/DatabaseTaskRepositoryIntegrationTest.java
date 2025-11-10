@@ -7,15 +7,25 @@ import java.time.LocalDate;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import org.springframework.test.context.ActiveProfiles;
+
+@ActiveProfiles("test")
 
 class DatabaseTaskRepositoryIntegrationTest {
 
-    private static final String DB_PATH = System.getProperty("user.dir") + "/planit_db";
+    private static final String DB_PATH = System.getProperty("user.dir") + "/planit_test_db";
     private DatabaseTaskRepository repo;
 
     @BeforeEach
     void setup() {
-        repo = new DatabaseTaskRepository();
+        repo = new DatabaseTaskRepository(System.getProperty("user.dir") + "/planit_test_db");
+    }
+
+    @AfterEach
+    void cleanup() {
+        File dbFile = new File(System.getProperty("user.dir") + "/planit_test_db.mv.db");
+        if (dbFile.exists())
+            dbFile.delete();
     }
 
     @Test

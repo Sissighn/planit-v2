@@ -5,14 +5,20 @@ import com.setayesh.planit.storage.TaskRepository;
 import java.time.LocalDate;
 import java.util.*;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 /**
  * Service class that manages the logic for adding, editing, deleting,
  * sorting, searching, and saving tasks.
  * Works with the JsonTaskRepository for persistent storage.
  */
+@Service
 public class TaskService {
     private final TaskRepository repo;
     private final List<Task> tasks;
+
+    @Autowired
 
     public TaskService(TaskRepository repo) {
         this.repo = Objects.requireNonNull(repo);
