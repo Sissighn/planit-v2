@@ -62,7 +62,8 @@ public class DatabaseTaskRepository implements TaskRepository {
                             done BOOLEAN,
                             archived BOOLEAN,
                             created_at TIMESTAMP,
-                            updated_at TIMESTAMP
+                            updated_at TIMESTAMP,
+                            group_id BIGINT
                         );
                     """);
 
@@ -76,7 +77,9 @@ public class DatabaseTaskRepository implements TaskRepository {
                             done BOOLEAN,
                             archived BOOLEAN,
                             created_at TIMESTAMP,
-                            updated_at TIMESTAMP
+                            updated_at TIMESTAMP,
+                            group_id BIGINT
+
                         );
                     """);
 
