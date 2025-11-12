@@ -13,6 +13,7 @@ public final class Task {
     private String title;
     private LocalDate deadline;
     private Priority priority;
+    private Long groupId;
     private boolean done;
     private boolean archived;
     private final LocalDateTime createdAt;
@@ -56,6 +57,7 @@ public final class Task {
             @JsonProperty("title") String title,
             @JsonProperty("deadline") LocalDate deadline,
             @JsonProperty("priority") Priority priority,
+            @JsonProperty("groupId") Long groupId,
             @JsonProperty("done") boolean done,
             @JsonProperty("archived") boolean archived,
             @JsonProperty("createdAt") LocalDateTime createdAt,
@@ -64,6 +66,7 @@ public final class Task {
         this.title = title;
         this.deadline = deadline;
         this.priority = priority;
+        this.groupId = groupId;
         this.done = done;
         this.archived = archived;
         this.createdAt = (createdAt != null) ? createdAt : LocalDateTime.now();
@@ -78,6 +81,10 @@ public final class Task {
 
     public String getTitle() {
         return title;
+    }
+
+    public Long getGroupId() {
+        return groupId;
     }
 
     public LocalDate getDeadline() {
@@ -125,6 +132,11 @@ public final class Task {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
+        touch();
+    }
+
+    public void setGroupId(Long groupId) {
+        this.groupId = groupId;
         touch();
     }
 

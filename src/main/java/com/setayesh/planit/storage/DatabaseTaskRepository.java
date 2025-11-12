@@ -125,6 +125,8 @@ public class DatabaseTaskRepository implements TaskRepository {
                 LocalDate deadline = (rs.getDate("deadline") != null) ? rs.getDate("deadline").toLocalDate() : null;
                 Priority priority = (rs.getString("priority") != null) ? Priority.valueOf(rs.getString("priority"))
                         : null;
+                Long groupId = rs.getObject("group_id") != null ? rs.getLong("group_id") : null;
+
                 boolean done = rs.getBoolean("done");
                 boolean archived = rs.getBoolean("archived");
                 LocalDateTime createdAt = rs.getTimestamp("created_at") != null
@@ -134,7 +136,7 @@ public class DatabaseTaskRepository implements TaskRepository {
                         ? rs.getTimestamp("updated_at").toLocalDateTime()
                         : LocalDateTime.now();
 
-                Task t = new Task(id, title, deadline, priority, done, archived, createdAt, updatedAt);
+                Task t = new Task(id, title, deadline, priority, groupId, done, archived, createdAt, updatedAt);
                 tasks.add(t);
             }
 
@@ -148,8 +150,8 @@ public class DatabaseTaskRepository implements TaskRepository {
     private void writeTable(String table, List<Task> tasks) {
         String truncate = "TRUNCATE TABLE " + table;
         String insert = """
-                    INSERT INTO %s (id, title, deadline, priority, done, archived, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    INSERT INTO %s (id, title, deadline, priority, group_id, done, archived, created_at, updated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """.formatted(table);
 
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD)) {
@@ -165,10 +167,11 @@ public class DatabaseTaskRepository implements TaskRepository {
                     ps.setString(2, t.getTitle());
                     ps.setObject(3, t.getDeadline());
                     ps.setString(4, t.getPriority() != null ? t.getPriority().name() : null);
-                    ps.setBoolean(5, t.isDone());
-                    ps.setBoolean(6, t.isArchived());
-                    ps.setTimestamp(7, Timestamp.valueOf(t.getCreatedAt()));
-                    ps.setTimestamp(8, Timestamp.valueOf(t.getUpdatedAt()));
+                    ps.setObject(5, t.getGroupId()); // 👈 Neu
+                    ps.setBoolean(6, t.isDone());
+                    ps.setBoolean(7, t.isArchived());
+                    ps.setTimestamp(8, Timestamp.valueOf(t.getCreatedAt()));
+                    ps.setTimestamp(9, Timestamp.valueOf(t.getUpdatedAt()));
                     ps.addBatch();
                 }
                 ps.executeBatch();

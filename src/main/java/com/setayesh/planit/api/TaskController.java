@@ -17,6 +17,7 @@ import java.util.UUID;
  * REST controller exposing all task management features as HTTP endpoints.
  * Mirrors the same functionality as the CLI version but through REST.
  */
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/tasks")
 public class TaskController {
@@ -38,10 +39,16 @@ public class TaskController {
     @PostMapping
     public ResponseEntity<Task> addTask(@RequestBody Map<String, String> body) {
         String title = body.get("title");
-        LocalDate deadline = body.containsKey("deadline") ? LocalDate.parse(body.get("deadline")) : null;
-        Priority priority = body.containsKey("priority")
-                ? Priority.valueOf(body.get("priority").toUpperCase())
-                : Priority.MEDIUM;
+
+        String deadlineValue = body.get("deadline");
+        LocalDate deadline = (deadlineValue == null || deadlineValue.isBlank())
+                ? null
+                : LocalDate.parse(deadlineValue);
+
+        String priorityValue = body.get("priority");
+        Priority priority = (priorityValue == null || priorityValue.isBlank())
+                ? null
+                : Priority.valueOf(priorityValue.toUpperCase());
 
         Task newTask = new Task(title, deadline, priority);
         taskService.addTask(newTask);
