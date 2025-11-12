@@ -14,6 +14,10 @@ public class Group {
         this.name = name;
     }
 
+    public Group(String name) {
+        this.name = name;
+    }
+
     public Long getId() {
         return id;
     }

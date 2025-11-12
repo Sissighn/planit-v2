@@ -23,10 +23,7 @@ public class GroupController {
 
     @PostMapping
     public Group addGroup(@RequestBody Group group) {
-        if (group.getId() == null)
-            group.setId(System.currentTimeMillis());
-        service.addGroup(group);
-        return group;
+        return service.addGroup(group);
     }
 
     @DeleteMapping("/{id}")

@@ -83,6 +83,13 @@ public class DatabaseTaskRepository implements TaskRepository {
                         );
                     """);
 
+            stmt.execute("""
+                        CREATE TABLE IF NOT EXISTS groups (
+                            id IDENTITY PRIMARY KEY,
+                            name VARCHAR(255) NOT NULL
+                        );
+                    """);
+
         } catch (SQLException e) {
             System.err.println("⚠️ Database init error: " + e.getMessage());
         }
