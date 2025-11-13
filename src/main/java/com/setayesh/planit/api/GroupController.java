@@ -23,7 +23,16 @@ public class GroupController {
 
     @PostMapping
     public Group addGroup(@RequestBody Group group) {
+        if (group.getId() != null) {
+            throw new IllegalArgumentException("Use PUT for updating existing groups.");
+        }
         return service.addGroup(group);
+    }
+
+    @PutMapping("/{id}")
+    public Group updateGroup(@PathVariable Long id, @RequestBody Group updatedGroup) {
+        updatedGroup.setId(id);
+        return service.updateGroup(updatedGroup);
     }
 
     @DeleteMapping("/{id}")
