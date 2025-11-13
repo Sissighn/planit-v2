@@ -8,7 +8,8 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/groups")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173", methods = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
+        RequestMethod.DELETE })
 public class GroupController {
     private final GroupService service;
 
@@ -31,8 +32,14 @@ public class GroupController {
 
     @PutMapping("/{id}")
     public Group updateGroup(@PathVariable Long id, @RequestBody Group updatedGroup) {
-        updatedGroup.setId(id);
-        return service.updateGroup(updatedGroup);
+
+        Group existing = service.getById(id);
+        if (existing == null) {
+            throw new RuntimeException("Group not found: " + id);
+        }
+
+        existing.setName(updatedGroup.getName());
+        return service.updateGroup(existing);
     }
 
     @DeleteMapping("/{id}")

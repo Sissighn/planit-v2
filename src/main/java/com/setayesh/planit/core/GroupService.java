@@ -31,4 +31,8 @@ public class GroupService {
     public void deleteGroup(Long id) {
         repo.delete(id);
     }
+
+    public Group getById(Long id) {
+        return repo.findById(id);
+    }
 }

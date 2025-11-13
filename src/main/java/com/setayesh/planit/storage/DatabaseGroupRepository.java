@@ -40,18 +40,14 @@ public class DatabaseGroupRepository {
                 Statement stmt = conn.createStatement()) {
 
             stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS groups (
+                        CREATE TABLE IF NOT EXISTS categories (
                             id IDENTITY PRIMARY KEY,
                             name VARCHAR(255) NOT NULL
                         );
                     """);
 
-            // Optional (nur wenn du FK möchtest; H2 braucht existierende Spalten):
-            // stmt.execute("ALTER TABLE tasks ADD CONSTRAINT IF NOT EXISTS fk_tasks_group
-            // FOREIGN KEY (group_id) REFERENCES groups(id);");
-
         } catch (SQLException e) {
-            System.err.println("⚠️ Error initializing groups schema: " + e.getMessage());
+            System.err.println("⚠️ Error initializing categories schema: " + e.getMessage());
         }
     }
 
@@ -59,11 +55,11 @@ public class DatabaseGroupRepository {
         List<Group> list = new ArrayList<>();
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
                 Statement st = conn.createStatement();
-                ResultSet rs = st.executeQuery("SELECT id,name FROM groups ORDER BY name ASC")) {
+                ResultSet rs = st.executeQuery("SELECT id,name FROM categories ORDER BY name ASC")) {
             while (rs.next())
                 list.add(new Group(rs.getLong("id"), rs.getString("name")));
         } catch (SQLException e) {
-            System.err.println("⚠️ Error reading groups: " + e.getMessage());
+            System.err.println("⚠️ Error reading categories: " + e.getMessage());
         }
         return list;
     }
@@ -75,7 +71,7 @@ public class DatabaseGroupRepository {
     }
 
     private Group insert(Group g) {
-        String sql = "INSERT INTO groups (name) VALUES (?)";
+        String sql = "INSERT INTO categories (name) VALUES (?)";
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
                 PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, g.getName());
@@ -91,7 +87,7 @@ public class DatabaseGroupRepository {
     }
 
     private Group update(Group g) {
-        String sql = "UPDATE groups SET name=? WHERE id=?";
+        String sql = "UPDATE categories SET name=? WHERE id=?";
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, g.getName());
@@ -104,7 +100,7 @@ public class DatabaseGroupRepository {
     }
 
     public void delete(Long id) {
-        String sql = "DELETE FROM groups WHERE id=?";
+        String sql = "DELETE FROM categories WHERE id=?";
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
                 PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, id);
@@ -113,4 +109,22 @@ public class DatabaseGroupRepository {
             System.err.println("⚠️ Error deleting group: " + e.getMessage());
         }
     }
+
+    public Group findById(Long id) {
+        String sql = "SELECT id, name FROM categories WHERE id = ?";
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setLong(1, id);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return new Group(rs.getLong("id"), rs.getString("name"));
+            }
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error finding group by id: " + e.getMessage());
+        }
+        return null;
+    }
+
 }
