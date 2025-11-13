@@ -2,6 +2,7 @@ package com.setayesh.planit.storage;
 
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.Priority;
+import com.setayesh.planit.core.RepeatFrequency;
 
 import org.springframework.stereotype.Repository;
 import java.sql.*;
@@ -79,7 +80,6 @@ public class DatabaseTaskRepository implements TaskRepository {
                             created_at TIMESTAMP,
                             updated_at TIMESTAMP,
                             group_id BIGINT
-
                         );
                     """);
 
@@ -89,6 +89,48 @@ public class DatabaseTaskRepository implements TaskRepository {
                             name VARCHAR(255) NOT NULL
                         );
                     """);
+
+            stmt.execute("""
+                                                CREATE TABLE IF NOT EXISTS task_instances_completed (
+                            id IDENTITY PRIMARY KEY,
+                            task_id UUID NOT NULL,
+                            completed_date DATE NOT NULL
+                        );
+                    """);
+
+            try {
+                stmt.execute("ALTER TABLE tasks ADD COLUMN repeat_frequency VARCHAR(20)");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE tasks ADD COLUMN repeat_days VARCHAR(50)");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE tasks ADD COLUMN repeat_until DATE");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE tasks ADD COLUMN repeat_interval INT");
+            } catch (SQLException ignored) {
+            }
+
+            try {
+                stmt.execute("ALTER TABLE archive ADD COLUMN repeat_frequency VARCHAR(20)");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE archive ADD COLUMN repeat_days VARCHAR(50)");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE archive ADD COLUMN repeat_until DATE");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE archive ADD COLUMN repeat_interval INT");
+            } catch (SQLException ignored) {
+            }
 
         } catch (SQLException e) {
             System.err.println("⚠️ Database init error: " + e.getMessage());
@@ -145,8 +187,20 @@ public class DatabaseTaskRepository implements TaskRepository {
                 LocalDateTime updatedAt = rs.getTimestamp("updated_at") != null
                         ? rs.getTimestamp("updated_at").toLocalDateTime()
                         : LocalDateTime.now();
+                String freqStr = rs.getString("repeat_frequency");
+                RepeatFrequency freq = (freqStr != null) ? RepeatFrequency.valueOf(freqStr) : RepeatFrequency.NONE;
 
-                Task t = new Task(id, title, deadline, priority, groupId, done, archived, createdAt, updatedAt);
+                String repeatDays = rs.getString("repeat_days");
+                LocalDate repeatUntil = rs.getDate("repeat_until") != null
+                        ? rs.getDate("repeat_until").toLocalDate()
+                        : null;
+
+                Integer repeatInterval = (Integer) rs.getObject("repeat_interval");
+
+                Task t = new Task(
+                        id, title, deadline, priority, groupId, done, archived,
+                        createdAt, updatedAt,
+                        freq, repeatDays, repeatUntil, repeatInterval);
                 tasks.add(t);
             }
 
@@ -160,9 +214,11 @@ public class DatabaseTaskRepository implements TaskRepository {
     private void writeTable(String table, List<Task> tasks) {
         String truncate = "TRUNCATE TABLE " + table;
         String insert = """
-                    INSERT INTO %s (id, title, deadline, priority, group_id, done, archived, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """.formatted(table);
+                                    INSERT INTO %s (id, title, deadline, priority, group_id, done, archived,
+                                created_at, updated_at,
+                                repeat_frequency, repeat_days, repeat_until, repeat_interval)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                """.formatted(table);
 
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD)) {
             conn.setAutoCommit(false); // <-- Transaktionsmodus aktivieren
@@ -182,6 +238,15 @@ public class DatabaseTaskRepository implements TaskRepository {
                     ps.setBoolean(7, t.isArchived());
                     ps.setTimestamp(8, Timestamp.valueOf(t.getCreatedAt()));
                     ps.setTimestamp(9, Timestamp.valueOf(t.getUpdatedAt()));
+                    ps.setString(10, t.getRepeatFrequency() != null ? t.getRepeatFrequency().name() : null);
+                    ps.setString(11, t.getRepeatDays());
+                    ps.setObject(12, t.getRepeatUntil());
+
+                    if (t.getRepeatInterval() != null) {
+                        ps.setInt(13, t.getRepeatInterval());
+                    } else {
+                        ps.setNull(13, Types.INTEGER);
+                    }
                     ps.addBatch();
                 }
                 ps.executeBatch();

@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public final class Task {
+
     private final UUID id;
     private String title;
     private LocalDate deadline;
@@ -19,38 +20,37 @@ public final class Task {
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // 🔁 New: Repeat fields
+    private RepeatFrequency repeatFrequency; // NONE, DAILY, WEEKLY, MONTHLY, YEARLY, CUSTOM
+    private String repeatDays; // For weekly: "MON,WED,FRI"
+    private LocalDate repeatUntil; // End date
+    private Integer repeatInterval; // For every X days/weeks/months
+
     // --- Constructors ---
 
-    // Default constructor for Jackson (and manual creation with defaults).
     public Task() {
         this.id = UUID.randomUUID();
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.done = false;
         this.archived = false;
+        this.repeatFrequency = RepeatFrequency.NONE;
     }
 
-    // Minimal constructor with title only.
     public Task(String title) {
         this();
-        if (title == null || title.trim().isEmpty())
-            throw new IllegalArgumentException("Task title cannot be empty.");
-        this.title = title.trim();
+        setTitle(title);
     }
 
-    // Full constructor for explicit task creation.
     public Task(String title, LocalDate deadline, Priority priority) {
-        this(); // sets id, timestamps, defaults
-
-        if (title == null || title.trim().isEmpty())
-            throw new IllegalArgumentException("Task title cannot be empty.");
-
-        this.title = title.trim();
+        this();
+        setTitle(title);
         this.deadline = deadline;
         this.priority = priority;
     }
 
-    // Jackson constructor for JSON deserialization
+    // --- JSON Constructor (FULL) ---
+
     @JsonCreator
     public Task(
             @JsonProperty("id") UUID id,
@@ -61,7 +61,12 @@ public final class Task {
             @JsonProperty("done") boolean done,
             @JsonProperty("archived") boolean archived,
             @JsonProperty("createdAt") LocalDateTime createdAt,
-            @JsonProperty("updatedAt") LocalDateTime updatedAt) {
+            @JsonProperty("updatedAt") LocalDateTime updatedAt,
+            @JsonProperty("repeatFrequency") RepeatFrequency repeatFrequency,
+            @JsonProperty("repeatDays") String repeatDays,
+            @JsonProperty("repeatUntil") LocalDate repeatUntil,
+            @JsonProperty("repeatInterval") Integer repeatInterval) {
+
         this.id = (id != null) ? id : UUID.randomUUID();
         this.title = title;
         this.deadline = deadline;
@@ -71,6 +76,11 @@ public final class Task {
         this.archived = archived;
         this.createdAt = (createdAt != null) ? createdAt : LocalDateTime.now();
         this.updatedAt = (updatedAt != null) ? updatedAt : LocalDateTime.now();
+
+        this.repeatFrequency = (repeatFrequency != null) ? repeatFrequency : RepeatFrequency.NONE;
+        this.repeatDays = repeatDays;
+        this.repeatUntil = repeatUntil;
+        this.repeatInterval = repeatInterval;
     }
 
     // --- Getters ---
@@ -111,6 +121,24 @@ public final class Task {
         return updatedAt;
     }
 
+    // --- Repeat getters ---
+
+    public RepeatFrequency getRepeatFrequency() {
+        return repeatFrequency;
+    }
+
+    public String getRepeatDays() {
+        return repeatDays;
+    }
+
+    public LocalDate getRepeatUntil() {
+        return repeatUntil;
+    }
+
+    public Integer getRepeatInterval() {
+        return repeatInterval;
+    }
+
     // --- Mutators ---
 
     public void setTitle(String title) {
@@ -140,8 +168,6 @@ public final class Task {
         touch();
     }
 
-    // --- State changes ---
-
     public void markDone() {
         this.done = true;
         touch();
@@ -149,6 +175,28 @@ public final class Task {
 
     public void markUndone() {
         this.done = false;
+        touch();
+    }
+
+    // --- Repeat setters ---
+
+    public void setRepeatFrequency(RepeatFrequency repeatFrequency) {
+        this.repeatFrequency = repeatFrequency != null ? repeatFrequency : RepeatFrequency.NONE;
+        touch();
+    }
+
+    public void setRepeatDays(String repeatDays) {
+        this.repeatDays = repeatDays;
+        touch();
+    }
+
+    public void setRepeatUntil(LocalDate repeatUntil) {
+        this.repeatUntil = repeatUntil;
+        touch();
+    }
+
+    public void setRepeatInterval(Integer repeatInterval) {
+        this.repeatInterval = repeatInterval;
         touch();
     }
 
@@ -177,8 +225,10 @@ public final class Task {
     public String toString() {
         return (done ? "[✔]" : "[ ]") + " " + title +
                 (deadline != null ? " (due: " + deadline + ")" : "") +
-                " [" + (priority != null ? priority : "-") + "]"
-                +
-                (archived ? " {archived}" : "");
+                " [" + (priority != null ? priority : "-") + "]" +
+                (archived ? " {archived}" : "") +
+                (repeatFrequency != null && repeatFrequency != RepeatFrequency.NONE
+                        ? " <repeats: " + repeatFrequency + ">"
+                        : "");
     }
 }
