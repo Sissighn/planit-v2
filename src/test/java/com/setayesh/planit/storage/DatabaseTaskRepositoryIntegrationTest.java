@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.springframework.test.context.ActiveProfiles;
 
 @ActiveProfiles("test")
-
 class DatabaseTaskRepositoryIntegrationTest {
 
     private static final String DB_PATH = System.getProperty("user.dir") + "/planit_test_db";
@@ -32,9 +31,8 @@ class DatabaseTaskRepositoryIntegrationTest {
     void databaseFileShouldExistAfterInit() {
         File dbFile = new File(DB_PATH + ".mv.db");
 
-        // Skip file check when running in CI (in-memory DB mode)
         if (System.getenv("GITHUB_ACTIONS") != null) {
-            System.out.println("Skipping file existence check in CI (using in-memory H2 database)");
+            System.out.println("Skipping file existence check in CI");
             return;
         }
 
@@ -46,20 +44,24 @@ class DatabaseTaskRepositoryIntegrationTest {
         Task t1 = new Task("111", LocalDate.now(), Priority.HIGH);
         Task t2 = new Task("222", LocalDate.now().plusDays(1), Priority.MEDIUM);
 
-        // ensure new fields are null by default
         assertNull(t1.getTime());
         assertNull(t1.getExcludedDates());
+        assertEquals(t1.getDeadline(), t1.getStartDate());
 
         repo.saveAll(List.of(t1, t2));
 
         List<Task> loaded = repo.findAll();
-
         assertEquals(2, loaded.size());
-        Task l1 = loaded.stream().filter(t -> t.getTitle().equals("111")).findFirst().orElseThrow();
+
+        Task l1 = loaded.stream()
+                .filter(t -> t.getTitle().equals("111"))
+                .findFirst()
+                .orElseThrow();
 
         assertEquals(Priority.HIGH, l1.getPriority());
         assertNull(l1.getTime());
         assertNull(l1.getExcludedDates());
+        assertEquals(l1.getDeadline(), l1.getStartDate());
     }
 
     @Test
@@ -70,7 +72,8 @@ class DatabaseTaskRepositoryIntegrationTest {
         repo.saveArchive(List.of(archived));
         List<Task> archive = repo.loadArchive();
 
-        assertEquals(1, archive.size(), "Should load one archived task");
-        assertTrue(archive.get(0).isArchived(), "Task should be marked as archived");
+        assertEquals(1, archive.size());
+        assertTrue(archive.get(0).isArchived());
+        assertEquals(archive.get(0).getDeadline(), archive.get(0).getStartDate());
     }
 }

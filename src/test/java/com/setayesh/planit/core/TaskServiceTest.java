@@ -8,9 +8,6 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Unit tests for TaskService using an in-memory repository.
- */
 class TaskServiceTest {
 
     @Test
@@ -24,6 +21,7 @@ class TaskServiceTest {
         var all = service.getAll();
         assertEquals(1, all.size());
         assertEquals("Learn Java", all.get(0).getTitle());
+        assertEquals(all.get(0).getDeadline(), all.get(0).getStartDate());
     }
 
     @Test
@@ -53,14 +51,14 @@ class TaskServiceTest {
         service.addTask(t2);
 
         service.deleteTask(t1.getId());
-        var remaining = service.getAll();
 
+        var remaining = service.getAll();
         assertEquals(1, remaining.size());
         assertEquals("Task 2", remaining.get(0).getTitle());
     }
 
     @Test
-    void markDone_shouldSetDoneTrue() {
+    void markDone_shouldSetDoneTrue_whenOneTimeTask() {
         var repo = new InMemoryTaskRepository();
         var service = new TaskService(repo);
 
@@ -68,9 +66,7 @@ class TaskServiceTest {
         service.addTask(task);
 
         service.markDone(task.getId());
-
-        var stored = service.findById(task.getId()).orElseThrow();
-        assertTrue(stored.isDone());
+        assertTrue(service.findById(task.getId()).orElseThrow().isDone());
     }
 
     @Test
@@ -90,20 +86,6 @@ class TaskServiceTest {
         assertEquals(Priority.HIGH, updated.getPriority());
     }
 
-    void sortByTitle_shouldSortAlphabetically() {
-        var repo = new InMemoryTaskRepository();
-        var service = new TaskService(repo);
-
-        service.addTask(new Task("Zebra", null, Priority.LOW));
-        service.addTask(new Task("Apple", null, Priority.HIGH));
-
-        service.sortByTitle();
-        var all = service.getAll();
-
-        assertEquals("Apple", all.get(0).getTitle());
-        assertEquals("Zebra", all.get(1).getTitle());
-    }
-
     @Test
     void archiveTask_shouldMoveToArchiveList() {
         var repo = new InMemoryTaskRepository();
@@ -116,7 +98,8 @@ class TaskServiceTest {
 
         assertTrue(repo.loadArchive().stream()
                 .anyMatch(a -> a.getTitle().equals("Archive Me")));
-        assertTrue(service.getAll().isEmpty(), "Task should be removed from active list");
+
+        assertTrue(service.getAll().isEmpty());
     }
 
     @Test
@@ -142,20 +125,6 @@ class TaskServiceTest {
         var remaining = service.getAll();
         assertEquals(2, remaining.size());
         assertTrue(remaining.stream().anyMatch(t -> t.getTitle().equals("Active Task")));
-        assertTrue(remaining.stream().anyMatch(Task::isArchived),
-                "Archived done tasks should remain");
+        assertTrue(remaining.stream().anyMatch(Task::isArchived));
     }
-
-    @Test
-    void addTask_shouldPersistInMemoryRepo() {
-        InMemoryTaskRepository repo = new InMemoryTaskRepository();
-        TaskService service = new TaskService(repo);
-
-        Task t = new Task("Test Task", LocalDate.now(), Priority.HIGH);
-        service.addTask(t);
-
-        assertEquals(1, repo.findAll().size());
-        assertEquals("Test Task", repo.findAll().get(0).getTitle());
-    }
-
 }

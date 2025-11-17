@@ -21,6 +21,7 @@ class TaskTest {
         assertEquals(Priority.HIGH, t.getPriority());
         assertFalse(t.isDone());
         assertFalse(t.isArchived());
+        assertEquals(date, t.getStartDate());
     }
 
     @Test
@@ -32,6 +33,7 @@ class TaskTest {
 
         assertEquals("Study Java", t.getTitle());
         assertEquals(LocalDate.of(2025, 12, 24), t.getDeadline());
+        assertEquals(LocalDate.of(2025, 12, 24), t.getStartDate());
         assertEquals(Priority.MEDIUM, t.getPriority());
     }
 
@@ -64,15 +66,13 @@ class TaskTest {
         assertTrue(str.contains("Halloween"));
         assertTrue(str.contains("HIGH"));
         assertTrue(str.contains("due: 2025-10-31"));
-        assertTrue(str.startsWith("[ ]"), "Should show unchecked when not done");
+        assertTrue(str.startsWith("[ ]"));
 
         t.markDone();
-        String doneStr = t.toString();
-        assertTrue(doneStr.startsWith("[✔]"), "Should show checked when done");
+        assertTrue(t.toString().startsWith("[✔]"));
 
         t.setArchived(true);
-        String archivedStr = t.toString();
-        assertTrue(archivedStr.contains("{archived}"), "Should indicate archived status");
+        assertTrue(t.toString().contains("{archived}"));
     }
 
     @Test
@@ -100,4 +100,11 @@ class TaskTest {
         assertEquals("14:00", t.getTime());
     }
 
+    @Test
+    void startDate_shouldFallbackToDeadline() {
+        LocalDate d = LocalDate.of(2025, 10, 10);
+        Task t = new Task("Study", d, Priority.LOW);
+
+        assertEquals(d, t.getStartDate());
+    }
 }
