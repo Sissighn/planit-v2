@@ -4,6 +4,8 @@ import com.setayesh.planit.storage.InMemoryTaskRepository;
 import com.setayesh.planit.storage.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -53,4 +55,19 @@ class TaskServiceInMemoryTest {
 
         assertTrue(repo.findAll().isEmpty(), "Task should be deleted by ID");
     }
+
+    @Test
+    void newFieldsShouldPersistInRepo() {
+        Task t = new Task("Yoga");
+        t.setTime("09:30");
+        t.addExcludedDate(LocalDate.of(2025, 2, 1));
+
+        service.addTask(t);
+
+        Task loaded = repo.findAll().get(0);
+
+        assertEquals("09:30", loaded.getTime());
+        assertEquals("2025-02-01", loaded.getExcludedDates());
+    }
+
 }

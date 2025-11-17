@@ -1,11 +1,15 @@
 package com.setayesh.planit.storage;
 
 import org.springframework.stereotype.Repository;
+
 import java.sql.*;
 import java.time.LocalDate;
-import java.util.*;
-import java.sql.Date;
+import java.util.UUID;
 
+/**
+ * Stores completed occurrences of recurring tasks.
+ * Each row = one (task_id, completed_date).
+ */
 @Repository
 public class TaskInstanceRepository {
 
@@ -15,21 +19,12 @@ public class TaskInstanceRepository {
 
     public TaskInstanceRepository() {
         this.url = resolveUrl(null);
+        initSchema();
     }
 
-    public void markCompleted(UUID taskId, LocalDate date) {
-        String sql = "INSERT INTO task_instances_completed (task_id, completed_date) VALUES (?, ?)";
-
-        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
-                PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setObject(1, taskId);
-            ps.setDate(2, Date.valueOf(date));
-            ps.executeUpdate();
-
-        } catch (SQLException e) {
-            System.err.println("⚠ Error marking completed: " + e.getMessage());
-        }
+    public TaskInstanceRepository(String customDbPath) {
+        this.url = resolveUrl(customDbPath);
+        initSchema();
     }
 
     private String resolveUrl(String customPath) {
@@ -43,23 +38,66 @@ public class TaskInstanceRepository {
         }
     }
 
-    public boolean isCompletedOn(UUID taskId, LocalDate date) {
-        String sql = "SELECT COUNT(*) FROM task_instances_completed WHERE task_id=? AND completed_date=?";
+    private void initSchema() {
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
+                Statement stmt = conn.createStatement()) {
 
+            stmt.execute("""
+                    CREATE TABLE IF NOT EXISTS task_instances_completed (
+                        id IDENTITY PRIMARY KEY,
+                        task_id UUID NOT NULL,
+                        completed_date DATE NOT NULL
+                    );
+                    """);
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error initializing task_instances_completed schema: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Mark a specific occurrence as completed for a given date.
+     */
+    public void markCompleted(UUID taskId, LocalDate date) {
+        String sql = "INSERT INTO task_instances_completed (task_id, completed_date) VALUES (?, ?)";
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
                 PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setObject(1, taskId);
-            ps.setDate(2, Date.valueOf(date));
-
-            try (ResultSet rs = ps.executeQuery()) {
-                rs.next();
-                return rs.getInt(1) > 0;
-            }
-
+            ps.setDate(2, java.sql.Date.valueOf(date));
+            ps.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("⚠ Error checking completion: " + e.getMessage());
+            System.err.println("⚠️ Error inserting task instance: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Check if the task occurrence for 'date' is already completed.
+     */
+    public boolean isCompletedOnDate(UUID taskId, LocalDate date) {
+        String sql = "SELECT 1 FROM task_instances_completed WHERE task_id = ? AND completed_date = ?";
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, taskId);
+            ps.setDate(2, java.sql.Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error checking task instance: " + e.getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Delete all occurrences for a task (e.g., when deleting the task).
+     */
+    public void deleteForTask(UUID taskId) {
+        String sql = "DELETE FROM task_instances_completed WHERE task_id = ?";
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setObject(1, taskId);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error deleting task instances: " + e.getMessage());
         }
     }
 }

@@ -27,6 +27,22 @@ class TaskServiceTest {
     }
 
     @Test
+    void excludeDate_shouldMarkSingleOccurrenceRemoved() {
+        var repo = new InMemoryTaskRepository();
+        var service = new TaskService(repo);
+
+        Task t = new Task("Gym", LocalDate.of(2025, 1, 1), Priority.HIGH);
+        t.setRepeatFrequency(RepeatFrequency.DAILY);
+
+        service.addTask(t);
+
+        service.findById(t.getId()).get().addExcludedDate(LocalDate.of(2025, 1, 2));
+        service.save();
+
+        assertTrue(service.findById(t.getId()).get().getExcludedDates().contains("2025-01-02"));
+    }
+
+    @Test
     void deleteTask_shouldRemoveById() {
         var repo = new InMemoryTaskRepository();
         var service = new TaskService(repo);

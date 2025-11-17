@@ -91,7 +91,7 @@ public class DatabaseTaskRepository implements TaskRepository {
                     """);
 
             stmt.execute("""
-                                                CREATE TABLE IF NOT EXISTS task_instances_completed (
+                            CREATE TABLE IF NOT EXISTS task_instances_completed (
                             id IDENTITY PRIMARY KEY,
                             task_id UUID NOT NULL,
                             completed_date DATE NOT NULL
@@ -114,6 +114,14 @@ public class DatabaseTaskRepository implements TaskRepository {
                 stmt.execute("ALTER TABLE tasks ADD COLUMN repeat_interval INT");
             } catch (SQLException ignored) {
             }
+            try {
+                stmt.execute("ALTER TABLE tasks ADD COLUMN time VARCHAR(20)");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE tasks ADD COLUMN excluded_dates VARCHAR(500)");
+            } catch (SQLException ignored) {
+            }
 
             try {
                 stmt.execute("ALTER TABLE archive ADD COLUMN repeat_frequency VARCHAR(20)");
@@ -129,6 +137,14 @@ public class DatabaseTaskRepository implements TaskRepository {
             }
             try {
                 stmt.execute("ALTER TABLE archive ADD COLUMN repeat_interval INT");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE archive ADD COLUMN time VARCHAR(20)");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE archive ADD COLUMN excluded_dates VARCHAR(500)");
             } catch (SQLException ignored) {
             }
 
@@ -196,11 +212,17 @@ public class DatabaseTaskRepository implements TaskRepository {
                         : null;
 
                 Integer repeatInterval = (Integer) rs.getObject("repeat_interval");
+                String time = rs.getString("time");
+                String excludedDates = rs.getString("excluded_dates");
 
                 Task t = new Task(
-                        id, title, deadline, priority, groupId, done, archived,
+                        id, title, deadline, priority, groupId,
+                        done, archived,
                         createdAt, updatedAt,
-                        freq, repeatDays, repeatUntil, repeatInterval);
+                        freq, repeatDays, repeatUntil,
+                        excludedDates,
+                        time,
+                        repeatInterval);
                 tasks.add(t);
             }
 
@@ -214,11 +236,15 @@ public class DatabaseTaskRepository implements TaskRepository {
     private void writeTable(String table, List<Task> tasks) {
         String truncate = "TRUNCATE TABLE " + table;
         String insert = """
-                                    INSERT INTO %s (id, title, deadline, priority, group_id, done, archived,
-                                created_at, updated_at,
-                                repeat_frequency, repeat_days, repeat_until, repeat_interval)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                                """.formatted(table);
+                    INSERT INTO %s (
+                    id, title, deadline, priority, group_id, done, archived,
+                    created_at, updated_at,
+                    repeat_frequency, repeat_days, repeat_until,
+                    excluded_dates, time,
+                    repeat_interval
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+                                                """.formatted(table);
 
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD)) {
             conn.setAutoCommit(false); // <-- Transaktionsmodus aktivieren
@@ -233,20 +259,25 @@ public class DatabaseTaskRepository implements TaskRepository {
                     ps.setString(2, t.getTitle());
                     ps.setObject(3, t.getDeadline());
                     ps.setString(4, t.getPriority() != null ? t.getPriority().name() : null);
-                    ps.setObject(5, t.getGroupId()); // 👈 Neu
+                    ps.setObject(5, t.getGroupId());
                     ps.setBoolean(6, t.isDone());
                     ps.setBoolean(7, t.isArchived());
                     ps.setTimestamp(8, Timestamp.valueOf(t.getCreatedAt()));
                     ps.setTimestamp(9, Timestamp.valueOf(t.getUpdatedAt()));
+
                     ps.setString(10, t.getRepeatFrequency() != null ? t.getRepeatFrequency().name() : null);
                     ps.setString(11, t.getRepeatDays());
                     ps.setObject(12, t.getRepeatUntil());
 
+                    ps.setString(13, t.getExcludedDates());
+                    ps.setString(14, t.getTime());
+
                     if (t.getRepeatInterval() != null) {
-                        ps.setInt(13, t.getRepeatInterval());
+                        ps.setInt(15, t.getRepeatInterval());
                     } else {
-                        ps.setNull(13, Types.INTEGER);
+                        ps.setNull(15, Types.INTEGER);
                     }
+
                     ps.addBatch();
                 }
                 ps.executeBatch();

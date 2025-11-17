@@ -74,4 +74,30 @@ class TaskTest {
         String archivedStr = t.toString();
         assertTrue(archivedStr.contains("{archived}"), "Should indicate archived status");
     }
+
+    @Test
+    void newFields_shouldBeNullByDefault() {
+        Task t = new Task("Test", LocalDate.now(), Priority.HIGH);
+
+        assertNull(t.getTime());
+        assertNull(t.getExcludedDates());
+    }
+
+    @Test
+    void addExcludedDate_shouldAppendCorrectly() {
+        Task t = new Task("Repeat", null, Priority.MEDIUM);
+        t.addExcludedDate(LocalDate.of(2025, 1, 1));
+        t.addExcludedDate(LocalDate.of(2025, 1, 2));
+
+        assertEquals("2025-01-01,2025-01-02", t.getExcludedDates());
+    }
+
+    @Test
+    void setTime_shouldStoreTimeString() {
+        Task t = new Task("Meeting", null, Priority.HIGH);
+        t.setTime("14:00");
+
+        assertEquals("14:00", t.getTime());
+    }
+
 }

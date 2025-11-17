@@ -2,8 +2,10 @@ package com.setayesh.planit.core;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
+import java.time.temporal.ChronoUnit;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -19,6 +21,8 @@ public final class Task {
     private boolean archived;
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String time;
+    private String excludedDates;
 
     // 🔁 New: Repeat fields
     private RepeatFrequency repeatFrequency; // NONE, DAILY, WEEKLY, MONTHLY, YEARLY, CUSTOM
@@ -39,7 +43,10 @@ public final class Task {
 
     public Task(String title) {
         this();
-        setTitle(title);
+        if (title == null || title.trim().isEmpty()) {
+            throw new IllegalArgumentException("Task title cannot be empty.");
+        }
+        this.title = title.trim();
     }
 
     public Task(String title, LocalDate deadline, Priority priority) {
@@ -65,6 +72,8 @@ public final class Task {
             @JsonProperty("repeatFrequency") RepeatFrequency repeatFrequency,
             @JsonProperty("repeatDays") String repeatDays,
             @JsonProperty("repeatUntil") LocalDate repeatUntil,
+            @JsonProperty("excludedDates") String excludedDates,
+            @JsonProperty("time") String time,
             @JsonProperty("repeatInterval") Integer repeatInterval) {
 
         this.id = (id != null) ? id : UUID.randomUUID();
@@ -76,11 +85,13 @@ public final class Task {
         this.archived = archived;
         this.createdAt = (createdAt != null) ? createdAt : LocalDateTime.now();
         this.updatedAt = (updatedAt != null) ? updatedAt : LocalDateTime.now();
-
         this.repeatFrequency = (repeatFrequency != null) ? repeatFrequency : RepeatFrequency.NONE;
         this.repeatDays = repeatDays;
         this.repeatUntil = repeatUntil;
         this.repeatInterval = repeatInterval;
+        this.time = time;
+        this.excludedDates = excludedDates;
+
     }
 
     // --- Getters ---
@@ -139,6 +150,10 @@ public final class Task {
         return repeatInterval;
     }
 
+    public String getTime() {
+        return time;
+    }
+
     // --- Mutators ---
 
     public void setTitle(String title) {
@@ -178,6 +193,11 @@ public final class Task {
         touch();
     }
 
+    public void setTime(String time) {
+        this.time = time;
+        touch();
+    }
+
     // --- Repeat setters ---
 
     public void setRepeatFrequency(RepeatFrequency repeatFrequency) {
@@ -198,6 +218,118 @@ public final class Task {
     public void setRepeatInterval(Integer repeatInterval) {
         this.repeatInterval = repeatInterval;
         touch();
+    }
+
+    // --- Recurrence helpers ---
+
+    /**
+     * Returns true if this task should occur on the given date,
+     * based on its repeat settings.
+     */
+    public boolean occursOn(LocalDate targetDate) {
+        if (targetDate == null) {
+            return false;
+        }
+
+        // Non-repeating: only on its deadline (if any)
+        if (repeatFrequency == null || repeatFrequency == RepeatFrequency.NONE) {
+            return deadline != null && deadline.equals(targetDate);
+        }
+
+        LocalDate start = getRepeatStartDate();
+        if (start == null || targetDate.isBefore(start)) {
+            return false;
+        }
+
+        if (repeatUntil != null && targetDate.isAfter(repeatUntil)) {
+            return false;
+        }
+
+        if (excludedDates != null && excludedDates.contains(targetDate.toString())) {
+            return false;
+        }
+
+        int interval = (repeatInterval != null && repeatInterval > 0) ? repeatInterval : 1;
+
+        switch (repeatFrequency) {
+            case DAILY -> {
+                long days = ChronoUnit.DAYS.between(start, targetDate);
+                return days >= 0 && days % interval == 0;
+            }
+            case WEEKLY -> {
+                // Check weekday
+                String dayCode = targetDate.getDayOfWeek().name().substring(0, 3); // MON, TUE, ...
+                boolean dayMatches;
+                if (repeatDays == null || repeatDays.isBlank()) {
+                    // fall back: only same weekday as start date
+                    String startDayCode = start.getDayOfWeek().name().substring(0, 3);
+                    dayMatches = dayCode.equals(startDayCode);
+                } else {
+                    dayMatches = Arrays.stream(repeatDays.split(","))
+                            .map(String::trim)
+                            .anyMatch(code -> code.equalsIgnoreCase(dayCode));
+                }
+                if (!dayMatches)
+                    return false;
+
+                long weeks = ChronoUnit.WEEKS.between(start, targetDate);
+                return weeks >= 0 && weeks % interval == 0;
+            }
+            case MONTHLY -> {
+                // same day-of-month, every N months
+                if (targetDate.getDayOfMonth() != start.getDayOfMonth()) {
+                    return false;
+                }
+                long months = ChronoUnit.MONTHS.between(
+                        start.withDayOfMonth(1),
+                        targetDate.withDayOfMonth(1));
+                return months >= 0 && months % interval == 0;
+            }
+            case YEARLY -> {
+                // same month + day, every N years
+                if (targetDate.getMonthValue() != start.getMonthValue()
+                        || targetDate.getDayOfMonth() != start.getDayOfMonth()) {
+                    return false;
+                }
+                long years = ChronoUnit.YEARS.between(start, targetDate);
+                return years >= 0 && years % interval == 0;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    public String getExcludedDates() {
+        return excludedDates;
+    }
+
+    public void setExcludedDates(String excludedDates) {
+        this.excludedDates = excludedDates;
+        touch();
+    }
+
+    public void addExcludedDate(LocalDate date) {
+        if (excludedDates == null || excludedDates.isBlank()) {
+            excludedDates = date.toString();
+        } else {
+            excludedDates += "," + date;
+        }
+        touch();
+    }
+
+    /**
+     * Base date from which the recurrence starts.
+     * Prefer deadline; fall back to createdAt.
+     */
+    private LocalDate getRepeatStartDate() {
+        if (deadline != null) {
+            return deadline;
+        }
+        if (createdAt != null) {
+            return createdAt.toLocalDate();
+        }
+        return null;
     }
 
     // --- Helpers ---

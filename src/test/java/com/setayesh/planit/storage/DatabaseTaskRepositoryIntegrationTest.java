@@ -46,13 +46,20 @@ class DatabaseTaskRepositoryIntegrationTest {
         Task t1 = new Task("111", LocalDate.now(), Priority.HIGH);
         Task t2 = new Task("222", LocalDate.now().plusDays(1), Priority.MEDIUM);
 
-        List<Task> tasks = List.of(t1, t2);
-        repo.saveAll(tasks);
+        // ensure new fields are null by default
+        assertNull(t1.getTime());
+        assertNull(t1.getExcludedDates());
+
+        repo.saveAll(List.of(t1, t2));
 
         List<Task> loaded = repo.findAll();
-        assertEquals(2, loaded.size(), "Should read back two tasks");
-        assertTrue(loaded.stream().anyMatch(t -> t.getTitle().equals("111")));
-        assertTrue(loaded.stream().anyMatch(t -> t.getPriority() == Priority.MEDIUM));
+
+        assertEquals(2, loaded.size());
+        Task l1 = loaded.stream().filter(t -> t.getTitle().equals("111")).findFirst().orElseThrow();
+
+        assertEquals(Priority.HIGH, l1.getPriority());
+        assertNull(l1.getTime());
+        assertNull(l1.getExcludedDates());
     }
 
     @Test
