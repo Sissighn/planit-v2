@@ -19,19 +19,17 @@ public final class Task {
     private Long groupId;
     private boolean done;
     private boolean archived;
+    private LocalDate startDate;
     private final LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String time;
     private String excludedDates;
-
-    // 🔁 New: Repeat fields
-    private RepeatFrequency repeatFrequency; // NONE, DAILY, WEEKLY, MONTHLY, YEARLY, CUSTOM
-    private String repeatDays; // For weekly: "MON,WED,FRI"
-    private LocalDate repeatUntil; // End date
-    private Integer repeatInterval; // For every X days/weeks/months
+    private RepeatFrequency repeatFrequency;
+    private String repeatDays;
+    private LocalDate repeatUntil;
+    private Integer repeatInterval;
 
     // --- Constructors ---
-
     public Task() {
         this.id = UUID.randomUUID();
         this.createdAt = LocalDateTime.now();
@@ -54,10 +52,10 @@ public final class Task {
         setTitle(title);
         this.deadline = deadline;
         this.priority = priority;
+
     }
 
-    // --- JSON Constructor (FULL) ---
-
+    // --- JSON Constructor ---
     @JsonCreator
     public Task(
             @JsonProperty("id") UUID id,
@@ -74,7 +72,8 @@ public final class Task {
             @JsonProperty("repeatUntil") LocalDate repeatUntil,
             @JsonProperty("excludedDates") String excludedDates,
             @JsonProperty("time") String time,
-            @JsonProperty("repeatInterval") Integer repeatInterval) {
+            @JsonProperty("repeatInterval") Integer repeatInterval,
+            @JsonProperty("startDate") LocalDate startDate) {
 
         this.id = (id != null) ? id : UUID.randomUUID();
         this.title = title;
@@ -91,6 +90,7 @@ public final class Task {
         this.repeatInterval = repeatInterval;
         this.time = time;
         this.excludedDates = excludedDates;
+        this.startDate = (startDate != null ? startDate : deadline);
 
     }
 
@@ -132,8 +132,6 @@ public final class Task {
         return updatedAt;
     }
 
-    // --- Repeat getters ---
-
     public RepeatFrequency getRepeatFrequency() {
         return repeatFrequency;
     }
@@ -154,7 +152,11 @@ public final class Task {
         return time;
     }
 
-    // --- Mutators ---
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    // --- Setters ---
 
     public void setTitle(String title) {
         if (title == null || title.trim().isEmpty())
@@ -198,8 +200,6 @@ public final class Task {
         touch();
     }
 
-    // --- Repeat setters ---
-
     public void setRepeatFrequency(RepeatFrequency repeatFrequency) {
         this.repeatFrequency = repeatFrequency != null ? repeatFrequency : RepeatFrequency.NONE;
         touch();
@@ -220,84 +220,113 @@ public final class Task {
         touch();
     }
 
-    // --- Recurrence helpers ---
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+        touch();
+    }
 
-    /**
-     * Returns true if this task should occur on the given date,
-     * based on its repeat settings.
-     */
-    public boolean occursOn(LocalDate targetDate) {
-        if (targetDate == null) {
+    // -------------------------------------------------------
+    // Recurrence Logic
+    // -------------------------------------------------------
+    public boolean occursOn(LocalDate date) {
+        if (date == null)
             return false;
-        }
 
-        // Non-repeating: only on its deadline (if any)
+        // non-recurring
         if (repeatFrequency == null || repeatFrequency == RepeatFrequency.NONE) {
-            return deadline != null && deadline.equals(targetDate);
+            return deadline != null && deadline.equals(date);
         }
 
-        LocalDate start = getRepeatStartDate();
-        if (start == null || targetDate.isBefore(start)) {
+        LocalDate start = (startDate != null ? startDate : createdAt.toLocalDate());
+
+        if (date.isBefore(start))
             return false;
-        }
-
-        if (repeatUntil != null && targetDate.isAfter(repeatUntil)) {
+        if (repeatUntil != null && date.isAfter(repeatUntil))
             return false;
-        }
 
-        if (excludedDates != null && excludedDates.contains(targetDate.toString())) {
+        if (excludedDates != null && excludedDates.contains(date.toString()))
             return false;
-        }
 
-        int interval = (repeatInterval != null && repeatInterval > 0) ? repeatInterval : 1;
+        int interval;
+        if (repeatInterval != null && repeatInterval > 0) {
+            interval = repeatInterval;
+        } else {
+            interval = 1;
+        }
 
         switch (repeatFrequency) {
+
             case DAILY -> {
-                long days = ChronoUnit.DAYS.between(start, targetDate);
-                return days >= 0 && days % interval == 0;
+                long diff = ChronoUnit.DAYS.between(start, date);
+                return diff >= 0 && diff % interval == 0;
             }
+
             case WEEKLY -> {
-                // Check weekday
-                String dayCode = targetDate.getDayOfWeek().name().substring(0, 3); // MON, TUE, ...
-                boolean dayMatches;
+                String dw = date.getDayOfWeek().name().substring(0, 3);
+                boolean matches;
+
                 if (repeatDays == null || repeatDays.isBlank()) {
-                    // fall back: only same weekday as start date
-                    String startDayCode = start.getDayOfWeek().name().substring(0, 3);
-                    dayMatches = dayCode.equals(startDayCode);
+                    matches = dw.equals(start.getDayOfWeek().name().substring(0, 3));
                 } else {
-                    dayMatches = Arrays.stream(repeatDays.split(","))
-                            .map(String::trim)
-                            .anyMatch(code -> code.equalsIgnoreCase(dayCode));
+                    matches = Arrays.stream(repeatDays.split(","))
+                            .anyMatch(d -> d.trim().equalsIgnoreCase(dw));
                 }
-                if (!dayMatches)
+
+                if (!matches)
                     return false;
 
-                long weeks = ChronoUnit.WEEKS.between(start, targetDate);
+                long weeks = ChronoUnit.WEEKS.between(start, date);
                 return weeks >= 0 && weeks % interval == 0;
             }
+
             case MONTHLY -> {
-                // same day-of-month, every N months
-                if (targetDate.getDayOfMonth() != start.getDayOfMonth()) {
+                if (date.getDayOfMonth() != start.getDayOfMonth())
                     return false;
-                }
                 long months = ChronoUnit.MONTHS.between(
                         start.withDayOfMonth(1),
-                        targetDate.withDayOfMonth(1));
+                        date.withDayOfMonth(1));
                 return months >= 0 && months % interval == 0;
             }
+
             case YEARLY -> {
-                // same month + day, every N years
-                if (targetDate.getMonthValue() != start.getMonthValue()
-                        || targetDate.getDayOfMonth() != start.getDayOfMonth()) {
+                if (date.getMonthValue() != start.getMonthValue()
+                        || date.getDayOfMonth() != start.getDayOfMonth())
                     return false;
-                }
-                long years = ChronoUnit.YEARS.between(start, targetDate);
+
+                long years = ChronoUnit.YEARS.between(start, date);
                 return years >= 0 && years % interval == 0;
+            }
+            case CUSTOM -> {
+                return false;
             }
             default -> {
                 return false;
             }
         }
+    }
+
+    public LocalDate computeNextOccurrence() {
+        if (repeatFrequency == null || repeatFrequency == RepeatFrequency.NONE) {
+            // non-recurring: nächste "Instanz" ist einfach die Deadline
+            return deadline;
+        }
+
+        LocalDate startBase = getRepeatStartDate();
+        if (startBase == null) {
+            return null;
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate cursor = !today.isBefore(startBase) ? today : startBase;
+
+        // Suche maximal 2 Jahre in die Zukunft, um Endlosschleifen zu vermeiden
+        for (int i = 0; i < 730; i++) {
+            if (occursOn(cursor)) {
+                return cursor;
+            }
+            cursor = cursor.plusDays(1);
+        }
+        return null;
     }
 
     public String getExcludedDates() {
@@ -316,38 +345,6 @@ public final class Task {
             excludedDates += "," + date;
         }
         touch();
-    }
-
-    /**
-     * Base date from which the recurrence starts.
-     * Prefer deadline; fall back to createdAt.
-     */
-    private LocalDate getRepeatStartDate() {
-        if (deadline != null) {
-            return deadline;
-        }
-        if (createdAt != null) {
-            return createdAt.toLocalDate();
-        }
-        return null;
-    }
-
-    public LocalDate computeNextOccurrence() {
-        LocalDate start = this.getDeadline();
-        if (start == null)
-            return null;
-
-        int interval = (this.getRepeatInterval() != null && this.getRepeatInterval() > 0)
-                ? this.getRepeatInterval()
-                : 1;
-
-        return switch (this.getRepeatFrequency()) {
-            case DAILY -> start.plusDays(interval);
-            case WEEKLY -> start.plusWeeks(interval);
-            case MONTHLY -> start.plusMonths(interval);
-            case YEARLY -> start.plusYears(interval);
-            default -> null;
-        };
     }
 
     // --- Helpers ---
@@ -369,6 +366,19 @@ public final class Task {
     @Override
     public int hashCode() {
         return Objects.hash(id);
+    }
+
+    private LocalDate getRepeatStartDate() {
+        if (startDate != null) {
+            return startDate;
+        }
+        if (deadline != null) {
+            return deadline;
+        }
+        if (createdAt != null) {
+            return createdAt.toLocalDate();
+        }
+        return null;
     }
 
     @Override

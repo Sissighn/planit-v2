@@ -2,8 +2,10 @@ package com.setayesh.planit.api;
 
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.TaskService;
+import com.setayesh.planit.storage.TaskInstanceRepository;
 import com.setayesh.planit.core.Priority;
 import com.setayesh.planit.core.RepeatFrequency;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,10 +21,12 @@ import java.util.UUID;
 public class TaskController {
 
     private final TaskService taskService;
+    private final TaskInstanceRepository instanceRepo;
 
     @Autowired
-    public TaskController(TaskService taskService) {
+    public TaskController(TaskService taskService, TaskInstanceRepository instanceRepo) {
         this.taskService = taskService;
+        this.instanceRepo = instanceRepo;
     }
 
     // --------------------------------------------------------
@@ -39,7 +43,7 @@ public class TaskController {
     @PostMapping
     public ResponseEntity<Task> addTask(@RequestBody Map<String, Object> body) {
 
-        String title = (String) body.get("title");
+        String title = (String) body.getOrDefault("title", "").toString();
 
         String deadlineValue = (String) body.get("deadline");
         LocalDate deadline = (deadlineValue == null || deadlineValue.isBlank())
@@ -87,7 +91,7 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // EDIT TASK (supports recurrence)
+    // EDIT TASK (fully supports recurrence)
     // --------------------------------------------------------
     @PutMapping("/{id}")
     public ResponseEntity<Void> editTask(
@@ -98,29 +102,34 @@ public class TaskController {
                 .orElseThrow(() -> new RuntimeException("Task not found: " + id));
 
         // Regular fields
-        if (body.containsKey("title"))
-            task.setTitle((String) body.get("title"));
+        if (body.containsKey("title")) {
+            Object val = body.get("title");
+            if (val != null) {
+                task.setTitle(val.toString());
+            }
+        }
 
         if (body.containsKey("deadline")) {
             Object d = body.get("deadline");
-            if (d == null || ((String) d).isBlank()) {
+            if (d == null || d.toString().isBlank()) {
                 task.setDeadline(null);
             } else {
-                task.setDeadline(LocalDate.parse((String) d));
+                task.setDeadline(LocalDate.parse(d.toString()));
             }
         }
 
         if (body.containsKey("priority") && body.get("priority") != null) {
-            task.setPriority(Priority.valueOf(((String) body.get("priority")).toUpperCase()));
+            task.setPriority(Priority.valueOf(body.get("priority").toString().toUpperCase()));
         }
 
-        // Recurrence fields
+        // Recurrence fields clean & null-safe
         if (body.containsKey("repeatFrequency")) {
             Object f = body.get("repeatFrequency");
-            if (f == null)
-                task.setRepeatFrequency(null);
-            else
-                task.setRepeatFrequency(RepeatFrequency.valueOf(((String) f).toUpperCase()));
+            if (f == null) {
+                task.setRepeatFrequency(RepeatFrequency.NONE);
+            } else {
+                task.setRepeatFrequency(RepeatFrequency.valueOf(f.toString().toUpperCase()));
+            }
         }
 
         if (body.containsKey("repeatDays")) {
@@ -129,19 +138,20 @@ public class TaskController {
 
         if (body.containsKey("repeatUntil")) {
             Object u = body.get("repeatUntil");
-            if (u == null) {
+            if (u == null || u.toString().isBlank()) {
                 task.setRepeatUntil(null);
             } else {
-                task.setRepeatUntil(LocalDate.parse((String) u));
+                task.setRepeatUntil(LocalDate.parse(u.toString()));
             }
         }
 
         if (body.containsKey("repeatInterval")) {
             Object val = body.get("repeatInterval");
-            if (val == null)
+            if (val == null) {
                 task.setRepeatInterval(null);
-            else if (val instanceof Number number)
-                task.setRepeatInterval(number.intValue());
+            } else if (val instanceof Number num) {
+                task.setRepeatInterval(num.intValue());
+            }
         }
 
         if (body.containsKey("time")) {
@@ -152,7 +162,7 @@ public class TaskController {
             task.setExcludedDates((String) body.get("excludedDates"));
         }
 
-        taskService.save(); // everything persisted
+        taskService.save();
         return ResponseEntity.noContent().build();
     }
 
@@ -172,7 +182,7 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // DELETE
+    // DELETE TASK
     // --------------------------------------------------------
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable UUID id) {
@@ -181,20 +191,16 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // DELETE ONE OCCURRENCE
+    // DELETE ONE OCCURRENCE → mark as EXCLUDED
     // --------------------------------------------------------
     @PutMapping("/{id}/exclude-date")
     public ResponseEntity<Void> excludeDate(
             @PathVariable UUID id,
             @RequestBody Map<String, String> body) {
 
-        Task task = taskService.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
-
         LocalDate date = LocalDate.parse(body.get("date"));
-        task.addExcludedDate(date);
+        taskService.excludeDate(id, date);
 
-        taskService.save();
         return ResponseEntity.noContent().build();
     }
 
@@ -221,9 +227,6 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
-    // --------------------------------------------------------
-    // GET ARCHIVE
-    // --------------------------------------------------------
     @GetMapping("/archive")
     public List<Task> getArchivedTasks() {
         return taskService.loadArchive();
@@ -239,7 +242,7 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // SORTING
+    // SORT
     // --------------------------------------------------------
     @GetMapping("/sorted")
     public ResponseEntity<List<Task>> getSortedTasks(
@@ -255,7 +258,7 @@ public class TaskController {
     }
 
     // ---------------------------------------------------------
-    // Tasks for a specific date (includes repeating tasks)
+    // ALL TASKS FOR A DATE
     // ---------------------------------------------------------
     @GetMapping("/for-date")
     public ResponseEntity<List<Task>> getTasksForDate(@RequestParam String date) {
@@ -264,14 +267,39 @@ public class TaskController {
             List<Task> result = taskService.getTasksForDate(parsed);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().build(); // invalid date format
+            return ResponseEntity.badRequest().build();
         }
     }
 
+    // ---------------------------------------------------------
+    // COMPLETED INSTANCES
+    // ---------------------------------------------------------
+    @GetMapping("/{id}/completed-instances")
+    public ResponseEntity<List<String>> getCompletedInstances(@PathVariable UUID id) {
+        List<LocalDate> dates = instanceRepo.findCompletedDates(id);
+        List<String> isoDates = dates.stream()
+                .map(LocalDate::toString)
+                .toList();
+        return ResponseEntity.ok(isoDates);
+    }
+
+    @PutMapping("/{id}/done-on")
+    public ResponseEntity<Void> markDoneOnDate(
+            @PathVariable UUID id,
+            @RequestParam String date) {
+
+        LocalDate d = LocalDate.parse(date);
+        taskService.markInstanceCompleted(id, d);
+
+        return ResponseEntity.ok().build();
+    }
+
+    // ---------------------------------------------------------
+    // TODAY'S TASKS (Dashboard)
+    // ---------------------------------------------------------
     @GetMapping("/today")
     public List<Task> getToday() {
         LocalDate today = LocalDate.now();
         return taskService.getTasksForDate(today);
     }
-
 }
