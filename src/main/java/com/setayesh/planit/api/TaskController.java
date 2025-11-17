@@ -268,4 +268,10 @@ public class TaskController {
         }
     }
 
+    @GetMapping("/today")
+    public List<Task> getToday() {
+        LocalDate today = LocalDate.now();
+        return taskService.getTasksForDate(today);
+    }
+
 }

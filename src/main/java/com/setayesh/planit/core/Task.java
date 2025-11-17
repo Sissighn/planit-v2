@@ -332,6 +332,24 @@ public final class Task {
         return null;
     }
 
+    public LocalDate computeNextOccurrence() {
+        LocalDate start = this.getDeadline();
+        if (start == null)
+            return null;
+
+        int interval = (this.getRepeatInterval() != null && this.getRepeatInterval() > 0)
+                ? this.getRepeatInterval()
+                : 1;
+
+        return switch (this.getRepeatFrequency()) {
+            case DAILY -> start.plusDays(interval);
+            case WEEKLY -> start.plusWeeks(interval);
+            case MONTHLY -> start.plusMonths(interval);
+            case YEARLY -> start.plusYears(interval);
+            default -> null;
+        };
+    }
+
     // --- Helpers ---
 
     private void touch() {

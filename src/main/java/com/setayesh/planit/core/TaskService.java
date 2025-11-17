@@ -5,9 +5,7 @@ import com.setayesh.planit.storage.TaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Service
@@ -47,11 +45,29 @@ public class TaskService {
     }
 
     public void markDone(UUID id) {
+        System.out.println("🔥 markDone CALLED for task: " + id);
+
         tasks.stream()
                 .filter(t -> t.getId().equals(id))
                 .findFirst()
                 .ifPresent(t -> {
-                    t.markDone();
+
+                    if (t.getRepeatFrequency() != null && t.getRepeatFrequency() != RepeatFrequency.NONE) {
+
+                        LocalDate next = t.computeNextOccurrence();
+                        System.out.println("➡️ Next occurrence computed: " + next);
+
+                        if (next != null) {
+                            t.setDeadline(next);
+                            t.markUndone();
+                        } else {
+                            t.markDone();
+                        }
+
+                    } else {
+                        t.markDone();
+                    }
+
                     save();
                 });
     }
@@ -164,14 +180,6 @@ public class TaskService {
                 continue;
             }
 
-            // Non-repeating: show only if deadline matches (or no deadline → ignore)
-            if (t.getRepeatFrequency() == null || t.getRepeatFrequency() == RepeatFrequency.NONE) {
-                if (t.getDeadline() != null && t.getDeadline().equals(date)) {
-                    result.add(t);
-                }
-                continue;
-            }
-
             // Repeating: use recurrence logic
             if (t.occursOn(date)) {
                 result.add(t);
@@ -179,111 +187,6 @@ public class TaskService {
         }
 
         return result;
-    }
-
-    /**
-     * True if this task "occurs" on the given date, based on its recurrence
-     * settings.
-     * Non-recurring tasks: occur on their deadline date only (if set),
-     * or always visible (if deadline is null).
-     */
-    public boolean occursOnDate(Task task, LocalDate date) {
-        RepeatFrequency freq = task.getRepeatFrequency();
-        if (freq == null || freq == RepeatFrequency.NONE) {
-            // Non-recurring task: simple behavior
-            if (task.getDeadline() == null) {
-                return true;
-            }
-            return task.getDeadline().equals(date);
-        }
-
-        LocalDate start = (task.getDeadline() != null)
-                ? task.getDeadline()
-                : task.getCreatedAt().toLocalDate();
-
-        if (date.isBefore(start)) {
-            return false;
-        }
-
-        if (task.getRepeatUntil() != null && date.isAfter(task.getRepeatUntil())) {
-            return false;
-        }
-
-        Integer interval = (task.getRepeatInterval() != null && task.getRepeatInterval() > 0)
-                ? task.getRepeatInterval()
-                : 1;
-
-        return switch (freq) {
-            case DAILY -> matchesDaily(start, date, interval);
-            case WEEKLY -> matchesWeekly(task, start, date, interval);
-            case MONTHLY -> matchesMonthly(start, date, interval);
-            case YEARLY -> matchesYearly(start, date, interval);
-            default -> false;
-        };
-    }
-
-    private boolean matchesDaily(LocalDate start, LocalDate date, int interval) {
-        long days = ChronoUnit.DAYS.between(start, date);
-        return days >= 0 && days % interval == 0;
-    }
-
-    private boolean matchesWeekly(Task task, LocalDate start, LocalDate date, int interval) {
-        long days = ChronoUnit.DAYS.between(start, date);
-        if (days < 0)
-            return false;
-
-        long weeks = days / 7;
-        if (weeks % interval != 0)
-            return false;
-
-        // Check day-of-week filter if present
-        String repeatDays = task.getRepeatDays();
-        if (repeatDays == null || repeatDays.isBlank()) {
-            return true;
-        }
-
-        DayOfWeek dow = date.getDayOfWeek(); // MONDAY...SUNDAY
-        String token = mapDayOfWeekToShort(dow); // "MON", "TUE", ...
-
-        String[] parts = repeatDays.split(",");
-        for (String p : parts) {
-            if (token.equalsIgnoreCase(p.trim())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean matchesMonthly(LocalDate start, LocalDate date, int interval) {
-        if (date.getDayOfMonth() != start.getDayOfMonth()) {
-            return false;
-        }
-        long months = ChronoUnit.MONTHS.between(
-                start.withDayOfMonth(1),
-                date.withDayOfMonth(1));
-        return months >= 0 && months % interval == 0;
-    }
-
-    private boolean matchesYearly(LocalDate start, LocalDate date, int interval) {
-        if (date.getMonth() != start.getMonth() || date.getDayOfMonth() != start.getDayOfMonth()) {
-            return false;
-        }
-        long years = ChronoUnit.YEARS.between(start, date);
-        return years >= 0 && years % interval == 0;
-    }
-
-    private String mapDayOfWeekToShort(DayOfWeek dow) {
-        // Maps MONDAY -> "MON", etc.
-        return switch (dow) {
-            case MONDAY -> "MON";
-            case TUESDAY -> "TUE";
-            case WEDNESDAY -> "WED";
-            case THURSDAY -> "THU";
-            case FRIDAY -> "FRI";
-            case SATURDAY -> "SAT";
-            case SUNDAY -> "SUN";
-            default -> "";
-        };
     }
 
     // Optional: use task_instances_completed later for UI like
