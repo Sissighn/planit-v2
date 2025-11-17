@@ -45,26 +45,37 @@ public class TaskService {
     }
 
     public void markDone(UUID id) {
-        System.out.println("🔥 markDone CALLED for task: " + id);
-
         tasks.stream()
                 .filter(t -> t.getId().equals(id))
                 .findFirst()
                 .ifPresent(t -> {
 
+                    // ✅ RECURRING TASKS (DAILY/WEEKLY/MONTHLY/YEARLY)
                     if (t.getRepeatFrequency() != null && t.getRepeatFrequency() != RepeatFrequency.NONE) {
 
-                        LocalDate next = t.computeNextOccurrence();
-                        System.out.println("➡️ Next occurrence computed: " + next);
-
-                        if (next != null) {
-                            t.setDeadline(next);
-                            t.markUndone();
-                        } else {
-                            t.markDone();
+                        // 1) Welche Instanz wurde erledigt?
+                        // → normalerweise: aktuelle Deadline = fälliges Datum
+                        LocalDate instanceDate = t.getDeadline();
+                        if (instanceDate == null) {
+                            // Fallback, falls Deadline mal nicht gesetzt ist
+                            instanceDate = LocalDate.now();
                         }
 
-                    } else {
+                        // 2) Diese Instanz als "completed" speichern
+                        markInstanceCompleted(t.getId(), instanceDate);
+
+                        // 3) Nächste Fälligkeit berechnen (Apple-Style: Deadline springt weiter)
+                        LocalDate next = t.computeNextOccurrence();
+                        if (next != null) {
+                            t.setDeadline(next);
+                        }
+
+                        // 4) Serie bleibt als UNDONE (damit im Dashboard normal angezeigt wird)
+                        t.markUndone();
+                    }
+
+                    // ✅ ONE-TIME TASKS
+                    else {
                         t.markDone();
                     }
 
@@ -215,4 +226,15 @@ public class TaskService {
         task.addExcludedDate(date);
         save();
     }
+
+    public void markInstanceCompleted(UUID taskId, LocalDate date) {
+        if (!instanceRepo.exists(taskId, date)) {
+            instanceRepo.markCompleted(taskId, date);
+        }
+    }
+
+    public boolean isInstanceCompleted(UUID taskId, LocalDate date) {
+        return instanceRepo.exists(taskId, date);
+    }
+
 }
