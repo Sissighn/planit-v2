@@ -4,6 +4,8 @@ import org.springframework.stereotype.Repository;
 
 import java.sql.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -58,14 +60,17 @@ public class TaskInstanceRepository {
      * Mark a specific occurrence as completed for a given date.
      */
     public void markCompleted(UUID taskId, LocalDate date) {
-        String sql = "INSERT INTO task_instances_completed (task_id, completed_date) VALUES (?, ?)";
+        String sql = "INSERT INTO task_instances_completed(task_id, completed_date) VALUES (?, ?)";
+
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
                 PreparedStatement ps = conn.prepareStatement(sql)) {
+
             ps.setObject(1, taskId);
             ps.setDate(2, java.sql.Date.valueOf(date));
             ps.executeUpdate();
+
         } catch (SQLException e) {
-            System.err.println("⚠️ Error inserting task instance: " + e.getMessage());
+            System.err.println("⚠️ Error saving completed instance: " + e.getMessage());
         }
     }
 
@@ -100,4 +105,45 @@ public class TaskInstanceRepository {
             System.err.println("⚠️ Error deleting task instances: " + e.getMessage());
         }
     }
+
+    public boolean exists(UUID taskId, LocalDate date) {
+        String sql = "SELECT 1 FROM task_instances_completed WHERE task_id = ? AND completed_date = ?";
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setObject(1, taskId);
+            ps.setDate(2, java.sql.Date.valueOf(date));
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error checking instance: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public List<LocalDate> findCompletedDates(UUID taskId) {
+        List<LocalDate> list = new ArrayList<>();
+        String sql = "SELECT completed_date FROM task_instances_completed WHERE task_id = ?";
+
+        try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD);
+                PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setObject(1, taskId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    list.add(rs.getDate("completed_date").toLocalDate());
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("⚠️ Error loading instance dates: " + e.getMessage());
+        }
+
+        return list;
+    }
+
 }
