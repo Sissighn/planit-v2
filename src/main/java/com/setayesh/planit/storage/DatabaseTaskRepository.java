@@ -122,6 +122,10 @@ public class DatabaseTaskRepository implements TaskRepository {
                 stmt.execute("ALTER TABLE tasks ADD COLUMN excluded_dates VARCHAR(500)");
             } catch (SQLException ignored) {
             }
+            try {
+                stmt.execute("ALTER TABLE tasks ADD COLUMN start_date DATE");
+            } catch (SQLException ignored) {
+            }
 
             try {
                 stmt.execute("ALTER TABLE archive ADD COLUMN repeat_frequency VARCHAR(20)");
@@ -145,6 +149,10 @@ public class DatabaseTaskRepository implements TaskRepository {
             }
             try {
                 stmt.execute("ALTER TABLE archive ADD COLUMN excluded_dates VARCHAR(500)");
+            } catch (SQLException ignored) {
+            }
+            try {
+                stmt.execute("ALTER TABLE archive ADD COLUMN start_date DATE");
             } catch (SQLException ignored) {
             }
 
@@ -190,28 +198,44 @@ public class DatabaseTaskRepository implements TaskRepository {
             while (rs.next()) {
                 UUID id = rs.getObject("id", UUID.class);
                 String title = rs.getString("title");
-                LocalDate deadline = (rs.getDate("deadline") != null) ? rs.getDate("deadline").toLocalDate() : null;
-                Priority priority = (rs.getString("priority") != null) ? Priority.valueOf(rs.getString("priority"))
+                LocalDate deadline = rs.getDate("deadline") != null ? rs.getDate("deadline").toLocalDate() : null;
+
+                Priority priority = (rs.getString("priority") != null)
+                        ? Priority.valueOf(rs.getString("priority"))
                         : null;
-                Long groupId = rs.getObject("group_id") != null ? rs.getLong("group_id") : null;
+
+                Long groupId = rs.getObject("group_id") != null
+                        ? rs.getLong("group_id")
+                        : null;
 
                 boolean done = rs.getBoolean("done");
                 boolean archived = rs.getBoolean("archived");
+
                 LocalDateTime createdAt = rs.getTimestamp("created_at") != null
                         ? rs.getTimestamp("created_at").toLocalDateTime()
                         : LocalDateTime.now();
+
                 LocalDateTime updatedAt = rs.getTimestamp("updated_at") != null
                         ? rs.getTimestamp("updated_at").toLocalDateTime()
                         : LocalDateTime.now();
+
                 String freqStr = rs.getString("repeat_frequency");
-                RepeatFrequency freq = (freqStr != null) ? RepeatFrequency.valueOf(freqStr) : RepeatFrequency.NONE;
+                RepeatFrequency freq = (freqStr != null)
+                        ? RepeatFrequency.valueOf(freqStr)
+                        : RepeatFrequency.NONE;
 
                 String repeatDays = rs.getString("repeat_days");
+
                 LocalDate repeatUntil = rs.getDate("repeat_until") != null
                         ? rs.getDate("repeat_until").toLocalDate()
                         : null;
 
+                LocalDate startDate = rs.getDate("start_date") != null
+                        ? rs.getDate("start_date").toLocalDate()
+                        : null;
+
                 Integer repeatInterval = (Integer) rs.getObject("repeat_interval");
+
                 String time = rs.getString("time");
                 String excludedDates = rs.getString("excluded_dates");
 
@@ -222,7 +246,8 @@ public class DatabaseTaskRepository implements TaskRepository {
                         freq, repeatDays, repeatUntil,
                         excludedDates,
                         time,
-                        repeatInterval);
+                        repeatInterval,
+                        startDate);
                 tasks.add(t);
             }
 
@@ -236,15 +261,17 @@ public class DatabaseTaskRepository implements TaskRepository {
     private void writeTable(String table, List<Task> tasks) {
         String truncate = "TRUNCATE TABLE " + table;
         String insert = """
-                    INSERT INTO %s (
-                    id, title, deadline, priority, group_id, done, archived,
-                    created_at, updated_at,
-                    repeat_frequency, repeat_days, repeat_until,
-                    excluded_dates, time,
-                    repeat_interval
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    INSERT INTO %s (
+                                    id, title, deadline, priority, group_id, done, archived,
+                                    created_at, updated_at,
+                                    repeat_frequency, repeat_days, repeat_until,
+                                    excluded_dates, time,
+                                    repeat_interval,
+                                    start_date
 
-                                                """.formatted(table);
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+                                                                """.formatted(table);
 
         try (Connection conn = DriverManager.getConnection(url, USER, PASSWORD)) {
             conn.setAutoCommit(false); // <-- Transaktionsmodus aktivieren
@@ -277,6 +304,7 @@ public class DatabaseTaskRepository implements TaskRepository {
                     } else {
                         ps.setNull(15, Types.INTEGER);
                     }
+                    ps.setObject(16, t.getStartDate());
 
                     ps.addBatch();
                 }
