@@ -247,8 +247,6 @@ public class DatabaseTaskRepository implements TaskRepository {
 
     private void writeTable(String table, List<Task> tasks) {
 
-        String truncate = "TRUNCATE TABLE " + table;
-
         String insert = """
                 INSERT INTO %s (
                     id, title, deadline, priority, group_id,
@@ -268,7 +266,7 @@ public class DatabaseTaskRepository implements TaskRepository {
             conn.setAutoCommit(false);
 
             try (Statement stmt = conn.createStatement()) {
-                stmt.executeUpdate(truncate);
+                stmt.execute("DELETE FROM " + table);
             }
 
             try (PreparedStatement ps = conn.prepareStatement(insert)) {
