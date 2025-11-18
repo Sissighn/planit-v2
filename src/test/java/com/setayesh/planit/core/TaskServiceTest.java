@@ -21,7 +21,9 @@ class TaskServiceTest {
         var all = service.getAll();
         assertEquals(1, all.size());
         assertEquals("Learn Java", all.get(0).getTitle());
-        assertEquals(all.get(0).getDeadline(), all.get(0).getStartDate());
+
+        // startDate should remain null
+        assertNull(all.get(0).getStartDate());
     }
 
     @Test

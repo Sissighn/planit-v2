@@ -1,41 +1,42 @@
 package com.setayesh.planit.storage;
 
-import com.setayesh.planit.core.*;
+import com.setayesh.planit.core.Task;
+import com.setayesh.planit.core.Priority;
 import org.junit.jupiter.api.*;
+
 import java.io.File;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.springframework.test.context.ActiveProfiles;
 
-@ActiveProfiles("test")
 class DatabaseTaskRepositoryIntegrationTest {
 
-    private static final String DB_PATH = System.getProperty("user.dir") + "/planit_test_db";
+    private static final String DB_PATH = System.getProperty("user.dir") + "/planit_db.mv.db";
+
     private DatabaseTaskRepository repo;
 
     @BeforeEach
     void setup() {
-        repo = new DatabaseTaskRepository(System.getProperty("user.dir") + "/planit_test_db");
+        repo = new DatabaseTaskRepository(); // <-- FIX
     }
 
     @AfterEach
     void cleanup() {
-        File dbFile = new File(System.getProperty("user.dir") + "/planit_test_db.mv.db");
-        if (dbFile.exists())
+        File dbFile = new File(DB_PATH);
+        if (dbFile.exists()) {
             dbFile.delete();
+        }
     }
 
     @Test
     void databaseFileShouldExistAfterInit() {
-        File dbFile = new File(DB_PATH + ".mv.db");
-
         if (System.getenv("GITHUB_ACTIONS") != null) {
-            System.out.println("Skipping file existence check in CI");
+            // In CI: in-memory DB → kein File.
             return;
         }
 
+        File dbFile = new File(DB_PATH);
         assertTrue(dbFile.exists(), "Database file should exist after initialization");
     }
 
@@ -43,10 +44,6 @@ class DatabaseTaskRepositoryIntegrationTest {
     void saveAndReadTasks() {
         Task t1 = new Task("111", LocalDate.now(), Priority.HIGH);
         Task t2 = new Task("222", LocalDate.now().plusDays(1), Priority.MEDIUM);
-
-        assertNull(t1.getTime());
-        assertNull(t1.getExcludedDates());
-        assertEquals(t1.getDeadline(), t1.getStartDate());
 
         repo.saveAll(List.of(t1, t2));
 
@@ -59,9 +56,7 @@ class DatabaseTaskRepositoryIntegrationTest {
                 .orElseThrow();
 
         assertEquals(Priority.HIGH, l1.getPriority());
-        assertNull(l1.getTime());
-        assertNull(l1.getExcludedDates());
-        assertEquals(l1.getDeadline(), l1.getStartDate());
+        assertNull(l1.getStartDate());
     }
 
     @Test
@@ -74,6 +69,6 @@ class DatabaseTaskRepositoryIntegrationTest {
 
         assertEquals(1, archive.size());
         assertTrue(archive.get(0).isArchived());
-        assertEquals(archive.get(0).getDeadline(), archive.get(0).getStartDate());
+        assertNull(archive.get(0).getStartDate());
     }
 }

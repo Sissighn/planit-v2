@@ -38,12 +38,12 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // CREATE TASK (supports recurrence)
+    // CREATE TASK (with recurrence)
     // --------------------------------------------------------
     @PostMapping
     public ResponseEntity<Task> addTask(@RequestBody Map<String, Object> body) {
 
-        String title = (String) body.getOrDefault("title", "").toString();
+        String title = body.getOrDefault("title", "").toString();
 
         String deadlineValue = (String) body.get("deadline");
         LocalDate deadline = (deadlineValue == null || deadlineValue.isBlank())
@@ -57,10 +57,15 @@ public class TaskController {
 
         Task newTask = new Task(title, deadline, priority);
 
+        // startDate
+        if (body.containsKey("startDate") && body.get("startDate") != null) {
+            newTask.setStartDate(LocalDate.parse(body.get("startDate").toString()));
+        }
+
         // Recurrence fields
         if (body.containsKey("repeatFrequency") && body.get("repeatFrequency") != null) {
             newTask.setRepeatFrequency(
-                    RepeatFrequency.valueOf(((String) body.get("repeatFrequency")).toUpperCase()));
+                    RepeatFrequency.valueOf(body.get("repeatFrequency").toString().toUpperCase()));
         }
 
         if (body.containsKey("repeatDays")) {
@@ -68,13 +73,13 @@ public class TaskController {
         }
 
         if (body.containsKey("repeatUntil") && body.get("repeatUntil") != null) {
-            newTask.setRepeatUntil(LocalDate.parse((String) body.get("repeatUntil")));
+            newTask.setRepeatUntil(LocalDate.parse(body.get("repeatUntil").toString()));
         }
 
-        if (body.containsKey("repeatInterval")) {
+        if (body.containsKey("repeatInterval") && body.get("repeatInterval") != null) {
             Object interval = body.get("repeatInterval");
-            if (interval instanceof Number number) {
-                newTask.setRepeatInterval(number.intValue());
+            if (interval instanceof Number num) {
+                newTask.setRepeatInterval(num.intValue());
             }
         }
 
@@ -91,7 +96,7 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // EDIT TASK (fully supports recurrence)
+    // EDIT TASK (full recurrence support)
     // --------------------------------------------------------
     @PutMapping("/{id}")
     public ResponseEntity<Void> editTask(
@@ -101,14 +106,12 @@ public class TaskController {
         Task task = taskService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found: " + id));
 
-        // Regular fields
-        if (body.containsKey("title")) {
-            Object val = body.get("title");
-            if (val != null) {
-                task.setTitle(val.toString());
-            }
+        // title
+        if (body.containsKey("title") && body.get("title") != null) {
+            task.setTitle(body.get("title").toString());
         }
 
+        // deadline
         if (body.containsKey("deadline")) {
             Object d = body.get("deadline");
             if (d == null || d.toString().isBlank()) {
@@ -118,11 +121,22 @@ public class TaskController {
             }
         }
 
+        // priority
         if (body.containsKey("priority") && body.get("priority") != null) {
             task.setPriority(Priority.valueOf(body.get("priority").toString().toUpperCase()));
         }
 
-        // Recurrence fields clean & null-safe
+        // startDate
+        if (body.containsKey("startDate")) {
+            Object sd = body.get("startDate");
+            if (sd == null || sd.toString().isBlank()) {
+                task.setStartDate(null);
+            } else {
+                task.setStartDate(LocalDate.parse(sd.toString()));
+            }
+        }
+
+        // repeatFrequency
         if (body.containsKey("repeatFrequency")) {
             Object f = body.get("repeatFrequency");
             if (f == null) {
@@ -132,10 +146,12 @@ public class TaskController {
             }
         }
 
+        // repeatDays
         if (body.containsKey("repeatDays")) {
             task.setRepeatDays((String) body.get("repeatDays"));
         }
 
+        // repeatUntil
         if (body.containsKey("repeatUntil")) {
             Object u = body.get("repeatUntil");
             if (u == null || u.toString().isBlank()) {
@@ -145,6 +161,7 @@ public class TaskController {
             }
         }
 
+        // repeatInterval
         if (body.containsKey("repeatInterval")) {
             Object val = body.get("repeatInterval");
             if (val == null) {
@@ -154,10 +171,12 @@ public class TaskController {
             }
         }
 
+        // time
         if (body.containsKey("time")) {
             task.setTime((String) body.get("time"));
         }
 
+        // excludedDates
         if (body.containsKey("excludedDates")) {
             task.setExcludedDates((String) body.get("excludedDates"));
         }
@@ -191,7 +210,7 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // DELETE ONE OCCURRENCE → mark as EXCLUDED
+    // DELETE ONE OCCURRENCE (exclude-date)
     // --------------------------------------------------------
     @PutMapping("/{id}/exclude-date")
     public ResponseEntity<Void> excludeDate(
@@ -205,7 +224,7 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // DELETE ALL FUTURE OCCURRENCES
+    // DELETE FUTURE OCCURRENCES
     // --------------------------------------------------------
     @PutMapping("/{id}/cut-off")
     public ResponseEntity<Void> deleteFutureOccurrences(
@@ -242,7 +261,7 @@ public class TaskController {
     }
 
     // --------------------------------------------------------
-    // SORT
+    // SORTING
     // --------------------------------------------------------
     @GetMapping("/sorted")
     public ResponseEntity<List<Task>> getSortedTasks(
@@ -258,14 +277,13 @@ public class TaskController {
     }
 
     // ---------------------------------------------------------
-    // ALL TASKS FOR A DATE
+    // TASKS FOR A DATE
     // ---------------------------------------------------------
     @GetMapping("/for-date")
     public ResponseEntity<List<Task>> getTasksForDate(@RequestParam String date) {
         try {
             LocalDate parsed = LocalDate.parse(date);
-            List<Task> result = taskService.getTasksForDate(parsed);
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(taskService.getTasksForDate(parsed));
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
@@ -277,10 +295,7 @@ public class TaskController {
     @GetMapping("/{id}/completed-instances")
     public ResponseEntity<List<String>> getCompletedInstances(@PathVariable UUID id) {
         List<LocalDate> dates = instanceRepo.findCompletedDates(id);
-        List<String> isoDates = dates.stream()
-                .map(LocalDate::toString)
-                .toList();
-        return ResponseEntity.ok(isoDates);
+        return ResponseEntity.ok(dates.stream().map(LocalDate::toString).toList());
     }
 
     @PutMapping("/{id}/done-on")
@@ -295,11 +310,10 @@ public class TaskController {
     }
 
     // ---------------------------------------------------------
-    // TODAY'S TASKS (Dashboard)
+    // TODAY'S TASKS
     // ---------------------------------------------------------
     @GetMapping("/today")
     public List<Task> getToday() {
-        LocalDate today = LocalDate.now();
-        return taskService.getTasksForDate(today);
+        return taskService.getTasksForDate(LocalDate.now());
     }
 }

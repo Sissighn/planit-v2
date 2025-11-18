@@ -6,9 +6,6 @@ import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Unit tests for the Task entity.
- */
 class TaskTest {
 
     @Test
@@ -21,7 +18,9 @@ class TaskTest {
         assertEquals(Priority.HIGH, t.getPriority());
         assertFalse(t.isDone());
         assertFalse(t.isArchived());
-        assertEquals(date, t.getStartDate());
+
+        // startDate is NULL unless explicitly set
+        assertNull(t.getStartDate());
     }
 
     @Test
@@ -33,7 +32,10 @@ class TaskTest {
 
         assertEquals("Study Java", t.getTitle());
         assertEquals(LocalDate.of(2025, 12, 24), t.getDeadline());
-        assertEquals(LocalDate.of(2025, 12, 24), t.getStartDate());
+
+        // startDate remains null unless explicitly set
+        assertNull(t.getStartDate());
+
         assertEquals(Priority.MEDIUM, t.getPriority());
     }
 
@@ -63,6 +65,7 @@ class TaskTest {
         Task t = new Task("Halloween", date, Priority.HIGH);
 
         String str = t.toString();
+
         assertTrue(str.contains("Halloween"));
         assertTrue(str.contains("HIGH"));
         assertTrue(str.contains("due: 2025-10-31"));
@@ -81,6 +84,7 @@ class TaskTest {
 
         assertNull(t.getTime());
         assertNull(t.getExcludedDates());
+        assertNull(t.getStartDate());
     }
 
     @Test
@@ -101,10 +105,12 @@ class TaskTest {
     }
 
     @Test
-    void startDate_shouldFallbackToDeadline() {
-        LocalDate d = LocalDate.of(2025, 10, 10);
-        Task t = new Task("Study", d, Priority.LOW);
+    void startDate_shouldBeSetOnlyWhenExplicitlyProvided() {
+        Task t = new Task("Study", LocalDate.of(2025, 10, 10), Priority.LOW);
 
-        assertEquals(d, t.getStartDate());
+        assertNull(t.getStartDate());
+
+        t.setStartDate(LocalDate.of(2025, 10, 10));
+        assertEquals(LocalDate.of(2025, 10, 10), t.getStartDate());
     }
 }

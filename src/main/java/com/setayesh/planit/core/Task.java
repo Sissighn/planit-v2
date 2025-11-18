@@ -28,6 +28,7 @@ public final class Task {
     private String repeatDays;
     private LocalDate repeatUntil;
     private Integer repeatInterval;
+    private LocalDate nextOccurrence;
 
     // --- Constructors ---
     public Task() {
@@ -52,8 +53,7 @@ public final class Task {
         setTitle(title);
         this.deadline = deadline;
         this.priority = priority;
-        this.startDate = deadline;
-
+        this.startDate = null;
     }
 
     // --- JSON Constructor ---
@@ -79,15 +79,8 @@ public final class Task {
         this.id = (id != null ? id : UUID.randomUUID());
         this.title = title;
 
-        // (1) deadline
         this.deadline = deadline;
-
-        // (2) startDate fallback
-        if (startDate != null) {
-            this.startDate = startDate;
-        } else {
-            this.startDate = deadline; // fallback
-        }
+        this.startDate = startDate;
 
         // CreatedAt
         this.createdAt = (createdAt != null ? createdAt : LocalDateTime.now());
@@ -170,6 +163,10 @@ public final class Task {
         return startDate;
     }
 
+    public LocalDate getNextOccurrence() {
+        return nextOccurrence;
+    }
+
     // --- Setters ---
 
     public void setTitle(String title) {
@@ -181,11 +178,6 @@ public final class Task {
 
     public void setDeadline(LocalDate deadline) {
         this.deadline = deadline;
-
-        if (this.startDate == null) {
-            this.startDate = deadline;
-        }
-
         touch();
     }
 
@@ -242,6 +234,10 @@ public final class Task {
     public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
         touch();
+    }
+
+    public void setNextOccurrence(LocalDate nextOccurrence) {
+        this.nextOccurrence = nextOccurrence;
     }
 
     // -------------------------------------------------------

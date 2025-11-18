@@ -2,6 +2,7 @@ package com.setayesh.planit.storage;
 
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.Priority;
+import com.setayesh.planit.core.RecurrenceUtils;
 import com.setayesh.planit.core.RepeatFrequency;
 
 import org.springframework.stereotype.Repository;
@@ -248,6 +249,8 @@ public class DatabaseTaskRepository implements TaskRepository {
                         time,
                         repeatInterval,
                         startDate);
+                t.setNextOccurrence(RecurrenceUtils.computeNextOccurrence(t, Collections.emptyList()));
+
                 tasks.add(t);
             }
 

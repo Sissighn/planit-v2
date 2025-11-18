@@ -10,10 +10,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Integration-style unit test that verifies TaskService
- * works correctly when backed by an InMemoryTaskRepository.
- */
 class TaskServiceInMemoryTest {
 
     private TaskRepository repo;
@@ -31,9 +27,10 @@ class TaskServiceInMemoryTest {
         service.addTask(t1);
 
         List<Task> all = service.getAll();
-        assertEquals(1, all.size(), "Expected exactly one task after add()");
+        assertEquals(1, all.size());
         assertEquals("Test feature", all.get(0).getTitle());
-        assertFalse(all.get(0).isDone(), "New task should not be marked done by default");
+        assertFalse(all.get(0).isDone());
+        assertNull(all.get(0).getStartDate());
     }
 
     @Test
@@ -43,7 +40,7 @@ class TaskServiceInMemoryTest {
 
         service.markDone(t.getId());
 
-        assertTrue(repo.findAll().get(0).isDone(), "Task should be marked done using ID");
+        assertTrue(repo.findAll().get(0).isDone());
     }
 
     @Test
@@ -53,7 +50,7 @@ class TaskServiceInMemoryTest {
 
         service.deleteTask(t.getId());
 
-        assertTrue(repo.findAll().isEmpty(), "Task should be deleted by ID");
+        assertTrue(repo.findAll().isEmpty());
     }
 
     @Test
@@ -69,5 +66,4 @@ class TaskServiceInMemoryTest {
         assertEquals("09:30", loaded.getTime());
         assertEquals("2025-02-01", loaded.getExcludedDates());
     }
-
 }
