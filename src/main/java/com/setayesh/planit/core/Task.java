@@ -52,6 +52,7 @@ public final class Task {
         setTitle(title);
         this.deadline = deadline;
         this.priority = priority;
+        this.startDate = deadline;
 
     }
 
@@ -63,8 +64,8 @@ public final class Task {
             @JsonProperty("deadline") LocalDate deadline,
             @JsonProperty("priority") Priority priority,
             @JsonProperty("groupId") Long groupId,
-            @JsonProperty("done") boolean done,
-            @JsonProperty("archived") boolean archived,
+            @JsonProperty("done") Boolean done,
+            @JsonProperty("archived") Boolean archived,
             @JsonProperty("createdAt") LocalDateTime createdAt,
             @JsonProperty("updatedAt") LocalDateTime updatedAt,
             @JsonProperty("repeatFrequency") RepeatFrequency repeatFrequency,
@@ -75,23 +76,36 @@ public final class Task {
             @JsonProperty("repeatInterval") Integer repeatInterval,
             @JsonProperty("startDate") LocalDate startDate) {
 
-        this.id = (id != null) ? id : UUID.randomUUID();
+        this.id = (id != null ? id : UUID.randomUUID());
         this.title = title;
+
+        // (1) deadline
         this.deadline = deadline;
+
+        // (2) startDate fallback
+        if (startDate != null) {
+            this.startDate = startDate;
+        } else {
+            this.startDate = deadline; // fallback
+        }
+
+        // CreatedAt
+        this.createdAt = (createdAt != null ? createdAt : LocalDateTime.now());
+        this.updatedAt = (updatedAt != null ? updatedAt : this.createdAt);
+
         this.priority = priority;
         this.groupId = groupId;
-        this.done = done;
-        this.archived = archived;
-        this.createdAt = (createdAt != null) ? createdAt : LocalDateTime.now();
-        this.updatedAt = (updatedAt != null) ? updatedAt : LocalDateTime.now();
-        this.repeatFrequency = (repeatFrequency != null) ? repeatFrequency : RepeatFrequency.NONE;
+
+        this.done = (done != null ? done : false);
+        this.archived = (archived != null ? archived : false);
+
+        this.repeatFrequency = (repeatFrequency != null ? repeatFrequency : RepeatFrequency.NONE);
         this.repeatDays = repeatDays;
         this.repeatUntil = repeatUntil;
         this.repeatInterval = repeatInterval;
+
         this.time = time;
         this.excludedDates = excludedDates;
-        this.startDate = (startDate != null ? startDate : deadline);
-
     }
 
     // --- Getters ---
@@ -167,6 +181,11 @@ public final class Task {
 
     public void setDeadline(LocalDate deadline) {
         this.deadline = deadline;
+
+        if (this.startDate == null) {
+            this.startDate = deadline;
+        }
+
         touch();
     }
 

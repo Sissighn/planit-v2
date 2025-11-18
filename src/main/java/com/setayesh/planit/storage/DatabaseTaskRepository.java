@@ -267,7 +267,7 @@ public class DatabaseTaskRepository implements TaskRepository {
                                     repeat_frequency, repeat_days, repeat_until,
                                     excluded_dates, time,
                                     repeat_interval,
-                                    start_date
+                                    start_date)
 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
