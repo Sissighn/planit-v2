@@ -112,12 +112,12 @@ public class TaskController {
         Task task = taskService.findById(id)
                 .orElseThrow(() -> new RuntimeException("Task not found: " + id));
 
-        // ---- title
-        if (body.containsKey("title")) {
-            task.setTitle(Objects.toString(body.get("title"), null));
+        // ---------------- TITLE ----------------
+        if (body.containsKey("title") && body.get("title") != null) {
+            task.setTitle(body.get("title").toString());
         }
 
-        // ---- deadline
+        // ---------------- DEADLINE ----------------
         if (body.containsKey("deadline")) {
             Object d = body.get("deadline");
             task.setDeadline(
@@ -126,12 +126,28 @@ public class TaskController {
                             : LocalDate.parse(d.toString()));
         }
 
-        // ---- priority
+        // ---------------- PRIORITY ----------------
         if (body.containsKey("priority") && body.get("priority") != null) {
-            task.setPriority(Priority.valueOf(body.get("priority").toString().toUpperCase()));
+            task.setPriority(
+                    Priority.valueOf(body.get("priority").toString().toUpperCase()));
         }
 
-        // ---- startDate
+        // ---------------- DONE TOGGLE (one-time tasks only!) ----------------
+        if (body.containsKey("done") && body.get("done") != null) {
+
+            boolean doneFlag = Boolean.parseBoolean(body.get("done").toString());
+
+            if (task.getRepeatFrequency() == RepeatFrequency.NONE) {
+                // one-time → normal toggle
+                if (doneFlag)
+                    task.markDone();
+                else
+                    task.markUndone();
+            }
+            // recurring tasks → ignore here (handled by /complete/{date})
+        }
+
+        // ---------------- START DATE ----------------
         if (body.containsKey("startDate")) {
             Object sd = body.get("startDate");
             task.setStartDate(
@@ -140,20 +156,21 @@ public class TaskController {
                             : LocalDate.parse(sd.toString()));
         }
 
-        // ---- repeatFrequency
+        // ---------------- REPEAT FREQ ----------------
         if (body.containsKey("repeatFrequency")) {
             Object f = body.get("repeatFrequency");
             task.setRepeatFrequency(
-                    f == null ? RepeatFrequency.NONE
+                    (f == null)
+                            ? RepeatFrequency.NONE
                             : RepeatFrequency.valueOf(f.toString().toUpperCase()));
         }
 
-        // ---- repeatDays
+        // ---------------- REPEAT DAYS ----------------
         if (body.containsKey("repeatDays")) {
             task.setRepeatDays((String) body.get("repeatDays"));
         }
 
-        // ---- repeatUntil
+        // ---------------- REPEAT UNTIL ----------------
         if (body.containsKey("repeatUntil")) {
             Object u = body.get("repeatUntil");
             task.setRepeatUntil(
@@ -162,30 +179,36 @@ public class TaskController {
                             : LocalDate.parse(u.toString()));
         }
 
-        // ---- repeatInterval
+        // ---------------- REPEAT INTERVAL ----------------
         if (body.containsKey("repeatInterval")) {
-            Object val = body.get("repeatInterval");
-            if (val == null) {
+            Object v = body.get("repeatInterval");
+            if (v == null) {
                 task.setRepeatInterval(null);
-            } else if (val instanceof Number num) {
+            } else if (v instanceof Number num) {
                 task.setRepeatInterval(num.intValue());
             }
         }
 
-        // ---- time
+        // ---------------- TIME ----------------
         if (body.containsKey("time")) {
             task.setTime((String) body.get("time"));
         }
 
-        // ---- excludedDates
+        // ---------------- EXCLUDED DATES ----------------
         if (body.containsKey("excludedDates")) {
             task.setExcludedDates((String) body.get("excludedDates"));
         }
 
-        // nach Änderungen nextOccurrence neu berechnen
-        List<LocalDate> completed = instanceRepo.findCompletedDates(id);
-        LocalDate next = RecurrenceUtils.computeNextOccurrence(task, completed);
-        task.setNextOccurrence(next);
+        // ---------------- NEXT OCCURRENCE ----------------
+        // ONLY RECURRENT tasks should have nextOccurrence!
+        if (task.getRepeatFrequency() != RepeatFrequency.NONE) {
+            List<LocalDate> completed = instanceRepo.findCompletedDates(id);
+            LocalDate next = RecurrenceUtils.computeNextOccurrence(task, completed);
+            task.setNextOccurrence(next);
+        } else {
+            // one-time tasks → nextOccurrence should NOT exist
+            task.setNextOccurrence(null);
+        }
 
         taskService.save();
         return ResponseEntity.noContent().build();
@@ -297,4 +320,5 @@ public class TaskController {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
     }
+
 }
