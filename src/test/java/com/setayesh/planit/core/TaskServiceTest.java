@@ -36,10 +36,12 @@ class TaskServiceTest {
 
         service.addTask(t);
 
-        service.findById(t.getId()).get().addExcludedDate(LocalDate.of(2025, 1, 2));
-        service.save();
+        // Excluded dates stored in Task itself → no instanceRepo needed for tests
+        service.excludeDate(t.getId(), LocalDate.of(2025, 1, 2));
 
-        assertTrue(service.findById(t.getId()).get().getExcludedDates().contains("2025-01-02"));
+        assertTrue(
+                service.findById(t.getId()).get()
+                        .getExcludedDates().contains("2025-01-02"));
     }
 
     @Test

@@ -2,9 +2,7 @@ package com.setayesh.planit.core;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.time.temporal.ChronoUnit;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -30,7 +28,10 @@ public final class Task {
     private Integer repeatInterval;
     private LocalDate nextOccurrence;
 
-    // --- Constructors ---
+    // ------------------------------
+    // Constructors
+    // ------------------------------
+
     public Task() {
         this.id = UUID.randomUUID();
         this.createdAt = LocalDateTime.now();
@@ -42,10 +43,7 @@ public final class Task {
 
     public Task(String title) {
         this();
-        if (title == null || title.trim().isEmpty()) {
-            throw new IllegalArgumentException("Task title cannot be empty.");
-        }
-        this.title = title.trim();
+        setTitle(title);
     }
 
     public Task(String title, LocalDate deadline, Priority priority) {
@@ -53,10 +51,8 @@ public final class Task {
         setTitle(title);
         this.deadline = deadline;
         this.priority = priority;
-        this.startDate = null;
     }
 
-    // --- JSON Constructor ---
     @JsonCreator
     public Task(
             @JsonProperty("id") UUID id,
@@ -74,15 +70,14 @@ public final class Task {
             @JsonProperty("excludedDates") String excludedDates,
             @JsonProperty("time") String time,
             @JsonProperty("repeatInterval") Integer repeatInterval,
-            @JsonProperty("startDate") LocalDate startDate) {
-
+            @JsonProperty("startDate") LocalDate startDate,
+            @JsonProperty("nextOccurrence") LocalDate nextOccurrence) {
         this.id = (id != null ? id : UUID.randomUUID());
         this.title = title;
 
         this.deadline = deadline;
         this.startDate = startDate;
 
-        // CreatedAt
         this.createdAt = (createdAt != null ? createdAt : LocalDateTime.now());
         this.updatedAt = (updatedAt != null ? updatedAt : this.createdAt);
 
@@ -99,9 +94,13 @@ public final class Task {
 
         this.time = time;
         this.excludedDates = excludedDates;
+
+        this.nextOccurrence = nextOccurrence;
     }
 
-    // --- Getters ---
+    // ------------------------------
+    // Getters
+    // ------------------------------
 
     public UUID getId() {
         return id;
@@ -167,7 +166,13 @@ public final class Task {
         return nextOccurrence;
     }
 
-    // --- Setters ---
+    public String getExcludedDates() {
+        return excludedDates;
+    }
+
+    // ------------------------------
+    // Setters
+    // ------------------------------
 
     public void setTitle(String title) {
         if (title == null || title.trim().isEmpty())
@@ -212,7 +217,7 @@ public final class Task {
     }
 
     public void setRepeatFrequency(RepeatFrequency repeatFrequency) {
-        this.repeatFrequency = repeatFrequency != null ? repeatFrequency : RepeatFrequency.NONE;
+        this.repeatFrequency = (repeatFrequency != null ? repeatFrequency : RepeatFrequency.NONE);
         touch();
     }
 
@@ -240,113 +245,9 @@ public final class Task {
         this.nextOccurrence = nextOccurrence;
     }
 
-    // -------------------------------------------------------
-    // Recurrence Logic
-    // -------------------------------------------------------
-    public boolean occursOn(LocalDate date) {
-        if (date == null)
-            return false;
-
-        // non-recurring
-        if (repeatFrequency == null || repeatFrequency == RepeatFrequency.NONE) {
-            return deadline != null && deadline.equals(date);
-        }
-
-        LocalDate start = (startDate != null ? startDate : createdAt.toLocalDate());
-
-        if (date.isBefore(start))
-            return false;
-        if (repeatUntil != null && date.isAfter(repeatUntil))
-            return false;
-
-        if (excludedDates != null && excludedDates.contains(date.toString()))
-            return false;
-
-        int interval;
-        if (repeatInterval != null && repeatInterval > 0) {
-            interval = repeatInterval;
-        } else {
-            interval = 1;
-        }
-
-        switch (repeatFrequency) {
-
-            case DAILY -> {
-                long diff = ChronoUnit.DAYS.between(start, date);
-                return diff >= 0 && diff % interval == 0;
-            }
-
-            case WEEKLY -> {
-                String dw = date.getDayOfWeek().name().substring(0, 3);
-                boolean matches;
-
-                if (repeatDays == null || repeatDays.isBlank()) {
-                    matches = dw.equals(start.getDayOfWeek().name().substring(0, 3));
-                } else {
-                    matches = Arrays.stream(repeatDays.split(","))
-                            .anyMatch(d -> d.trim().equalsIgnoreCase(dw));
-                }
-
-                if (!matches)
-                    return false;
-
-                long weeks = ChronoUnit.WEEKS.between(start, date);
-                return weeks >= 0 && weeks % interval == 0;
-            }
-
-            case MONTHLY -> {
-                if (date.getDayOfMonth() != start.getDayOfMonth())
-                    return false;
-                long months = ChronoUnit.MONTHS.between(
-                        start.withDayOfMonth(1),
-                        date.withDayOfMonth(1));
-                return months >= 0 && months % interval == 0;
-            }
-
-            case YEARLY -> {
-                if (date.getMonthValue() != start.getMonthValue()
-                        || date.getDayOfMonth() != start.getDayOfMonth())
-                    return false;
-
-                long years = ChronoUnit.YEARS.between(start, date);
-                return years >= 0 && years % interval == 0;
-            }
-            case CUSTOM -> {
-                return false;
-            }
-            default -> {
-                return false;
-            }
-        }
-    }
-
-    public LocalDate computeNextOccurrence() {
-        if (repeatFrequency == null || repeatFrequency == RepeatFrequency.NONE) {
-            // non-recurring: nächste "Instanz" ist einfach die Deadline
-            return deadline;
-        }
-
-        LocalDate startBase = getRepeatStartDate();
-        if (startBase == null) {
-            return null;
-        }
-
-        LocalDate today = LocalDate.now();
-        LocalDate cursor = !today.isBefore(startBase) ? today : startBase;
-
-        // Suche maximal 2 Jahre in die Zukunft, um Endlosschleifen zu vermeiden
-        for (int i = 0; i < 730; i++) {
-            if (occursOn(cursor)) {
-                return cursor;
-            }
-            cursor = cursor.plusDays(1);
-        }
-        return null;
-    }
-
-    public String getExcludedDates() {
-        return excludedDates;
-    }
+    // ------------------------------
+    // Excluded dates
+    // ------------------------------
 
     public void setExcludedDates(String excludedDates) {
         this.excludedDates = excludedDates;
@@ -362,7 +263,75 @@ public final class Task {
         touch();
     }
 
-    // --- Helpers ---
+    // ------------------------------
+    // Occurrence logic for CLI only
+    // ------------------------------
+
+    public boolean occursOn(LocalDate date) {
+        if (repeatFrequency == null || repeatFrequency == RepeatFrequency.NONE) {
+            return deadline != null && deadline.equals(date);
+        }
+
+        LocalDate start = (startDate != null ? startDate : createdAt.toLocalDate());
+        if (date.isBefore(start))
+            return false;
+        if (repeatUntil != null && date.isAfter(repeatUntil))
+            return false;
+
+        if (excludedDates != null) {
+            for (String ex : excludedDates.split(",")) {
+                if (ex.equals(date.toString()))
+                    return false;
+            }
+        }
+
+        int interval = (repeatInterval != null && repeatInterval > 0) ? repeatInterval : 1;
+
+        switch (repeatFrequency) {
+            case DAILY -> {
+                long diff = ChronoUnit.DAYS.between(start, date);
+                return diff >= 0 && diff % interval == 0;
+            }
+            case WEEKLY -> {
+                String code = date.getDayOfWeek().name().substring(0, 3).toUpperCase();
+                boolean match = false;
+
+                if (repeatDays != null && !repeatDays.isBlank()) {
+                    for (String d : repeatDays.split(",")) {
+                        if (d.trim().equalsIgnoreCase(code))
+                            match = true;
+                    }
+                } else {
+                    match = code.equals(start.getDayOfWeek().name().substring(0, 3).toUpperCase());
+                }
+
+                if (!match)
+                    return false;
+
+                long weeks = ChronoUnit.WEEKS.between(start, date);
+                return weeks >= 0 && weeks % interval == 0;
+            }
+            case MONTHLY -> {
+                if (date.getDayOfMonth() != start.getDayOfMonth())
+                    return false;
+                long months = ChronoUnit.MONTHS.between(start.withDayOfMonth(1), date.withDayOfMonth(1));
+                return months >= 0 && months % interval == 0;
+            }
+            case YEARLY -> {
+                if (date.getDayOfYear() != start.getDayOfYear())
+                    return false;
+                long years = ChronoUnit.YEARS.between(start, date);
+                return years >= 0 && years % interval == 0;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    // ------------------------------
+    // Helper
+    // ------------------------------
 
     private void touch() {
         this.updatedAt = LocalDateTime.now();
@@ -372,10 +341,9 @@ public final class Task {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (!(o instanceof Task))
+        if (!(o instanceof Task t))
             return false;
-        Task task = (Task) o;
-        return id.equals(task.id);
+        return id.equals(t.id);
     }
 
     @Override
@@ -383,27 +351,28 @@ public final class Task {
         return Objects.hash(id);
     }
 
-    private LocalDate getRepeatStartDate() {
-        if (startDate != null) {
-            return startDate;
-        }
-        if (deadline != null) {
-            return deadline;
-        }
-        if (createdAt != null) {
-            return createdAt.toLocalDate();
-        }
-        return null;
-    }
-
     @Override
     public String toString() {
-        return (done ? "[✔]" : "[ ]") + " " + title +
-                (deadline != null ? " (due: " + deadline + ")" : "") +
-                " [" + (priority != null ? priority : "-") + "]" +
-                (archived ? " {archived}" : "") +
-                (repeatFrequency != null && repeatFrequency != RepeatFrequency.NONE
-                        ? " <repeats: " + repeatFrequency + ">"
-                        : "");
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(done ? "[✔] " : "[ ] ");
+        sb.append(title != null ? title : "(no title)");
+
+        if (deadline != null) {
+            sb.append(" (due: ").append(deadline).append(")");
+        }
+
+        sb.append(" [").append(priority != null ? priority : "-").append("]");
+
+        if (archived) {
+            sb.append(" {archived}");
+        }
+
+        if (repeatFrequency != null && repeatFrequency != RepeatFrequency.NONE) {
+            sb.append(" <repeats: ").append(repeatFrequency).append(">");
+        }
+
+        return sb.toString();
     }
+
 }

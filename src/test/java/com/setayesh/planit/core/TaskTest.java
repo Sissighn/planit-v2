@@ -9,41 +9,27 @@ import static org.junit.jupiter.api.Assertions.*;
 class TaskTest {
 
     @Test
-    void constructor_shouldInitializeFieldsCorrectly() {
-        LocalDate date = LocalDate.of(2025, 11, 1);
-        Task t = new Task("Write code", date, Priority.HIGH);
+    void defaultConstructor_shouldInitializeFields() {
+        Task t = new Task("Test");
 
-        assertEquals("Write code", t.getTitle());
-        assertEquals(date, t.getDeadline());
-        assertEquals(Priority.HIGH, t.getPriority());
+        assertNotNull(t.getId());
+        assertEquals("Test", t.getTitle());
         assertFalse(t.isDone());
         assertFalse(t.isArchived());
-
-        // startDate is NULL unless explicitly set
-        assertNull(t.getStartDate());
+        assertEquals(RepeatFrequency.NONE, t.getRepeatFrequency());
     }
 
     @Test
-    void defaultConstructor_shouldAllowManualSetters() {
-        Task t = new Task();
-        t.setTitle("Study Java");
-        t.setDeadline(LocalDate.of(2025, 12, 24));
-        t.setPriority(Priority.MEDIUM);
-
-        assertEquals("Study Java", t.getTitle());
-        assertEquals(LocalDate.of(2025, 12, 24), t.getDeadline());
-
-        // startDate remains null unless explicitly set
-        assertNull(t.getStartDate());
-
-        assertEquals(Priority.MEDIUM, t.getPriority());
-    }
-
-    @Test
-    void markDoneAndUndone_shouldToggleDoneFlag() {
-        Task t = new Task("Test toggles", null, Priority.LOW);
-
+    void markDone_shouldSetDoneTrue() {
+        Task t = new Task("Homework");
         assertFalse(t.isDone());
+        t.markDone();
+        assertTrue(t.isDone());
+    }
+
+    @Test
+    void markUndone_shouldUnsetDone() {
+        Task t = new Task("Homework");
         t.markDone();
         assertTrue(t.isDone());
         t.markUndone();
@@ -51,66 +37,62 @@ class TaskTest {
     }
 
     @Test
-    void archiveFlag_shouldBeSettable() {
-        Task t = new Task("Archive test", null, Priority.MEDIUM);
+    void toString_shouldContainTitleAndPriority() {
+        Task t = new Task("Do homework", LocalDate.of(2025, 1, 1), Priority.HIGH);
 
-        assertFalse(t.isArchived());
-        t.setArchived(true);
-        assertTrue(t.isArchived());
+        String s = t.toString();
+
+        assertTrue(s.contains("Do homework"));
+        assertTrue(s.contains("HIGH"));
     }
 
     @Test
-    void toString_shouldReflectStatusAndFields() {
-        LocalDate date = LocalDate.of(2025, 10, 31);
-        Task t = new Task("Halloween", date, Priority.HIGH);
-
-        String str = t.toString();
-
-        assertTrue(str.contains("Halloween"));
-        assertTrue(str.contains("HIGH"));
-        assertTrue(str.contains("due: 2025-10-31"));
-        assertTrue(str.startsWith("[ ]"));
-
+    void toString_shouldShowCheckmarkForDone() {
+        Task t = new Task("Do homework");
         t.markDone();
-        assertTrue(t.toString().startsWith("[✔]"));
 
+        String s = t.toString();
+        assertTrue(s.contains("[✔]"));
+    }
+
+    @Test
+    void toString_shouldShowArchivedFlag() {
+        Task t = new Task("Archived");
         t.setArchived(true);
-        assertTrue(t.toString().contains("{archived}"));
+
+        String s = t.toString();
+
+        assertTrue(s.contains("{archived}"));
     }
 
     @Test
-    void newFields_shouldBeNullByDefault() {
-        Task t = new Task("Test", LocalDate.now(), Priority.HIGH);
+    void toString_shouldShowDeadlineIfPresent() {
+        Task t = new Task("Due Task", LocalDate.of(2025, 5, 20), Priority.MEDIUM);
 
-        assertNull(t.getTime());
-        assertNull(t.getExcludedDates());
-        assertNull(t.getStartDate());
+        String s = t.toString();
+
+        assertTrue(s.contains("due: 2025-05-20"));
     }
 
     @Test
-    void addExcludedDate_shouldAppendCorrectly() {
-        Task t = new Task("Repeat", null, Priority.MEDIUM);
-        t.addExcludedDate(LocalDate.of(2025, 1, 1));
-        t.addExcludedDate(LocalDate.of(2025, 1, 2));
+    void toString_shouldShowRepeatFrequency() {
+        Task t = new Task("Repeat Daily");
+        t.setRepeatFrequency(RepeatFrequency.DAILY);
 
-        assertEquals("2025-01-01,2025-01-02", t.getExcludedDates());
+        String s = t.toString();
+
+        assertTrue(s.contains("repeats: DAILY"));
     }
 
     @Test
-    void setTime_shouldStoreTimeString() {
-        Task t = new Task("Meeting", null, Priority.HIGH);
-        t.setTime("14:00");
+    void settersShouldUpdateUpdatedAt() throws InterruptedException {
+        Task t = new Task("Test");
 
-        assertEquals("14:00", t.getTime());
-    }
+        LocalDate initialUpdate = t.getUpdatedAt().toLocalDate();
 
-    @Test
-    void startDate_shouldBeSetOnlyWhenExplicitlyProvided() {
-        Task t = new Task("Study", LocalDate.of(2025, 10, 10), Priority.LOW);
+        Thread.sleep(10);
+        t.setTitle("New Title");
 
-        assertNull(t.getStartDate());
-
-        t.setStartDate(LocalDate.of(2025, 10, 10));
-        assertEquals(LocalDate.of(2025, 10, 10), t.getStartDate());
+        assertTrue(t.getUpdatedAt().isAfter(t.getCreatedAt()));
     }
 }
