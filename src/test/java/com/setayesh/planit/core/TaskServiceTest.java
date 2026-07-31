@@ -131,4 +131,23 @@ class TaskServiceTest {
         assertTrue(remaining.stream().anyMatch(t -> t.getTitle().equals("Active Task")));
         assertTrue(remaining.stream().anyMatch(Task::isArchived));
     }
+
+    @Test
+    void removeGroupFromTasks_shouldOnlyUnassignMatchingTasks() {
+        var repo = new InMemoryTaskRepository();
+        var service = new TaskService(repo);
+
+        var grouped = new Task("Grouped task");
+        grouped.setGroupId(12L);
+        var other = new Task("Other task");
+        other.setGroupId(34L);
+        service.addTask(grouped);
+        service.addTask(other);
+
+        service.removeGroupFromTasks(12L);
+
+        assertNull(grouped.getGroupId());
+        assertEquals(34L, other.getGroupId());
+        assertNull(repo.findAll().get(0).getGroupId());
+    }
 }
