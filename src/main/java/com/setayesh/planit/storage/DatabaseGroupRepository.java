@@ -25,10 +25,12 @@ public class DatabaseGroupRepository {
     }
 
     private String resolveUrl(String customPath) {
-        if (System.getenv("GITHUB_ACTIONS") != null) {
-            return "jdbc:h2:mem:planit;DB_CLOSE_DELAY=-1";
+        if (customPath != null && customPath.startsWith("jdbc:")) {
+            return customPath;
         } else if (customPath != null) {
             return "jdbc:h2:file:" + customPath + ";AUTO_SERVER=TRUE";
+        } else if (System.getenv("GITHUB_ACTIONS") != null) {
+            return "jdbc:h2:mem:planit;DB_CLOSE_DELAY=-1";
         } else {
             String dbPath = System.getProperty("user.dir") + "/planit_db";
             return "jdbc:h2:file:" + dbPath + ";AUTO_SERVER=TRUE";
