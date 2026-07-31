@@ -25,7 +25,7 @@ async function jsonOrThrow(res) {
 }
 
 export async function getTasks(params = {}) {
-  const url = new URL(API_URL);
+  const url = new URL(API_URL, window.location.origin);
   Object.entries(params).forEach(([k, v]) => {
     if (v != null) url.searchParams.set(k, v);
   });
