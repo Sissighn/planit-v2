@@ -1,140 +1,91 @@
-# PlanIT v2
+# PlanIT
+
 [![CI](https://github.com/Sissighn/planit-v2/actions/workflows/ci.yml/badge.svg)](https://github.com/Sissighn/planit-v2/actions/workflows/ci.yml)
 
-> **PlanIt** is a modern command-line task management application written in Java. It evolved from a simple to-do list into a robust, database-backed productivity tool with modular architecture and reliable persistence.
+PlanIT is a task-planning application with a Spring Boot REST API and a React frontend. Both applications live in this repository and are developed and tested together.
 
+## Technology
 
----
+- Backend: Java 21, Spring Boot, Maven, JDBC and H2
+- Frontend: React 19, Vite, Tailwind CSS and FullCalendar
+- Tests: JUnit 5, Jest and React Testing Library
 
-### Features
-- **Persistent Storage:** Tasks are stored in an embedded **H2 database** (replacing the earlier JSON repository).  
-- **Auto-Save & Shutdown Hook:** All active and archived tasks are automatically saved when the app exits.  
-- **Task Management Core:** Add, edit, sort, mark as done, archive, and clear completed tasks.  
-- **Layered Architecture:** Clean separation between the packages.  
-- **Modular Repository Interface:** Easily switch between JSON, In-Memory, or Database backends.  
-- **Multi-language UI Support (EN / DE):** Ready for further language extensions.  
-- **Archive System:** Completed tasks can be safely moved to a persistent archive.
+## Repository structure
 
-
----
-
-## Tech Stack
-
-| Category | Technology |
-|-----------|-------------|
-| Language | Java 21 |
-| Build Tool | Maven |
-| Database | H2 (embedded) |
-| ORM.     | JDBC
-| Logging | SLF4J + SimpleLogger |
-| Testing | JUnit 5 |
-
----
-
-## Project Structure
-
-```bash
+```text
 planit-v2/
-├── pom.xml
-├── README.md
-├── .gitignore
-│
-├── src/main/java/com/setayesh/planit/
-│   ├── core/
-│   ├── i18n/
-│   ├── settings/
-│   ├── storage/
-│   ├── ui/
-│   ├── util/
-│   └── Main.java
-│
-├── src/main/resources/
-│
-└── src/test/java/com/setayesh/planit/
-│   ├── core/
-│   ├── settings/
-│   ├── storage/
-│   ├── ui/
-│   └── util/
+├── backend/                  Spring Boot application and Maven build
+├── frontend/                 React application and npm build
+├── docs/                     Architecture documentation
+├── scripts/                  Cross-project development scripts
+├── .github/workflows/        Backend and frontend CI
+├── Makefile                  Common project commands
+└── README.md                 Project entry point
 ```
 
----
+See [Architecture](docs/architecture.md) for component boundaries and design decisions.
 
-## Setup & Usage
+## Requirements
 
-### Prerequisites
-- Java 21 or higher  
-- Maven 3.9+  
+- Java 21 or newer
+- Maven 3.9 or newer
+- Node.js 22
+- npm 10 or newer
 
-### Installation
+## Setup
+
+Install the frontend dependencies once:
+
 ```bash
-# Clone the repository
-git clone https://github.com/Sissighn/planit-v2.git
-cd planit-v2
-
-# Build the project
-mvn clean package
-
-# Run the application
-java -jar target/planit-1.0.0.jar
+make install
 ```
-### Running Tests
+
+Start backend and frontend together:
+
 ```bash
-mvn test
+make dev
 ```
-Tasks are stored in an embedded H2 database (planit_db.mv.db) in your project directory.
 
----
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8080/api
+- Swagger UI: http://localhost:8080/swagger-ui.html
+- H2 console: http://localhost:8080/h2-console
 
-## Inspecting the Database
-Access the H2 web console to view and query your data:
-1. Run: 
+Press `Ctrl+C` to stop both development processes.
+
+You can also start them separately in two terminals:
+
 ```bash
-java -cp ~/.m2/repository/com/h2database/h2/2.4.240/h2-2.4.240.jar org.h2.tools.Server
+make backend
+make frontend
 ```
-Open http://localhost:8082 and connect with:
 
-- JDBC URL: jdbc:h2:file:./planit_db
-- Username: sa
-- Password: (leave empty)
+## Verification
 
----
+Run the complete backend and frontend quality checks:
 
-## Technical Highlights
+```bash
+make check
+```
 
-- Embedded Database - H2 for zero-configuration data persistence
+Run only the tests:
 
-- Transactional Writes: conn.setAutoCommit(false) + conn.commit() ensures data integrity.
+```bash
+make test
+```
 
-- Graceful Exit: Shutdown hook guarantees persistence even on unexpected termination.
+Create both production builds:
 
-- Clean Error Handling: Clear console feedback for I/O and SQL issues.
+```bash
+make build
+```
 
-- Internationalization - i18n system ready for additional languages
+The backend JAR is written to `backend/target/planit-backend-1.0.0.jar`; the frontend output is written to `frontend/dist/`.
 
----
+## Local data
 
-## Roadmap
-Phase 1: Enterprise Database
+Root development commands store the embedded H2 database under `data/planit_db.mv.db`. Override the location with `PLANIT_DATABASE_PATH`. Local data and generated build output are ignored by Git.
 
- Migrate from H2 to PostgreSQL
- Implement JPA/Hibernate instead of raw JDBC
- Add database migrations with Flyway
- Docker Compose for local PostgreSQL setup
+## License
 
-Phase 2: REST API
-
- Spring Boot REST controllers
- OpenAPI/Swagger documentation
- DTO layer with validation
-
-Phase 3: Modern Frontend
-
- React + TypeScript UI
- JWT Authentication
- Cloud deployment (AWS/Azure)
- 
- ---
-
-## 🪶 License
-MIT License © 2025 Setayesh Golshan
+[MIT License](LICENSE) © 2025–2026 Setayesh Golshan
