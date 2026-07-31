@@ -12,3 +12,11 @@ target/
 # Maven Shade
 dependency-reduced-pom.xml
 
+# Local application data
+planit_db*.db
+planit_tasks.json*
+
+# Local workspace metadata
+.vscode/
+*.code-workspace
+Icon?
