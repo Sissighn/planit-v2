@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Libre";
+  src:
+    url("/fonts/Libre.woff2") format("woff2"),
+    url("/fonts/Libre.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DMS";
+  src:
+    url("/fonts/DMS.woff2") format("woff2"),
+    url("/fonts/DMS.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Amsterdam";
+  src:
+    url("/fonts/Amsterdam.woff2") format("woff2"),
+    url("/fonts/Amsterdam.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "TheJorwayRegular";
+  src:
+    url("/fonts/TheJorwayRegular.woff2") format("woff2"),
+    url("/fonts/TheJorwayRegular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pavon";
+  src:
+    url("/fonts/Pavon.woff2") format("woff2"),
+    url("/fonts/Pavon.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Ruigslay";
+  src:
+    url("/fonts/Ruigslay.woff2") format("woff2"),
+    url("/fonts/Ruigslay.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "OrangeAvenue";
+  src:
+    url("/fonts/OrangeAvenue.woff2") format("woff2"),
+    url("/fonts/OrangeAvenue.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer utilities {
+  .font-cormorant {
+    font-family: "Cormorant", serif;
+  }
+
+  .font-jorway {
+    font-family: "TheJorwayRegular", serif;
+  }
+
+  .font-pavon {
+    font-family: "Pavon", serif;
+  }
+
+  .font-ruigslay {
+    font-family: "Ruigslay", serif;
+  }
+
+  .font-orange {
+    font-family: "OrangeAvenue", serif;
+  }
+
+  .font-amsterdam {
+    font-family: "Amsterdam", serif;
+  }
+
+  .font-dms {
+    font-family: "DMS", serif;
+  }
+
+  .font-libre {
+    font-family: "Libre", serif;
+  }
+}
+
+@layer utilities {
+  .text-soft-purple {
+    color: #55368f;
+  }
+  .text-soft-pink {
+    color: #d787af;
+  }
+}
+.fc {
+  --fc-border-color: rgba(147, 51, 234, 0.2);
+  --fc-button-bg-color: #44296a;
+  --fc-button-border-color: transparent;
+  --fc-button-hover-bg-color: #aa8fde;
+  --fc-today-bg-color: rgba(167, 139, 250, 0.15);
+  --fc-event-bg-color: #7b589f;
+  --fc-event-border-color: transparent;
+  --fc-text-color: #2d1b69;
+}
+
+.option-panel {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: scaleY(0.95);
+  transform-origin: top;
+  margin-top: 0;
+  padding: 0 1rem;
+  transition:
+    max-height 0.6s cubic-bezier(0.25, 1, 0.5, 1),
+    opacity 0.4s ease,
+    transform 0.5s cubic-bezier(0.25, 1, 0.5, 1),
+    margin-top 0.4s ease,
+    padding 0.4s ease;
+}
+
+.option-panel.open {
+  max-height: 200px;
+  opacity: 1;
+  transform: scaleY(1);
+  margin-top: 0.75rem;
+  padding: 1rem;
+}
+
+.task-item-active {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+  background-color: rgba(255, 255, 255, 0.55);
+  transform: scale(1.01);
+  transition: all 0.3s ease;
+  animation: taskExpand 0.45s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@keyframes taskExpand {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.015);
+  }
+  100% {
+    transform: scale(1.01);
+  }
+}
+@keyframes modalPop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-modalPop {
+  animation: modalPop 250ms cubic-bezier(0.25, 1, 0.5, 1);
+}
