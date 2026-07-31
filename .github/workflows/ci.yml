@@ -4,8 +4,12 @@ on:
   pull_request:
 
 jobs:
-  build:
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -15,7 +19,37 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
 
-      - name: Build & Test
-        run: mvn -B -DskipTests=false verify
+      - name: Verify backend
+        run: mvn --batch-mode verify
 
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test -- --runInBand
+
+      - name: Build
+        run: npm run build
