@@ -26,3 +26,7 @@ planit_tasks.json*
 .vscode/
 *.code-workspace
 Icon?
+
+# Local environment overrides
+.env
+!.env.example
