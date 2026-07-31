@@ -1,0 +1,8 @@
+target/
+data/
+*.db
+*.log
+.DS_Store
+.idea/
+.vscode/
+README.md
