@@ -6,6 +6,8 @@ import com.setayesh.planit.core.RecurrenceUtils;
 import com.setayesh.planit.core.RepeatFrequency;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,7 +26,8 @@ public class DatabaseTaskRepository implements TaskRepository {
         initDatabase();
     }
 
-    public DatabaseTaskRepository(String customDbPath) {
+    @Autowired
+    public DatabaseTaskRepository(@Value("${planit.database.path}") String customDbPath) {
         this.url = resolveUrl(customDbPath);
         logInit();
         initDatabase();
@@ -32,7 +35,7 @@ public class DatabaseTaskRepository implements TaskRepository {
 
     private String resolveUrl(String customPath) {
         if (customPath != null) {
-            System.out.println("🧪 Running test database at: " + customPath);
+            System.out.println("💾 Using configured database at: " + customPath);
             return "jdbc:h2:file:" + customPath + ";AUTO_SERVER=TRUE";
         } else if (System.getenv("GITHUB_ACTIONS") != null) {
             System.out.println("🏗 Running in GitHub Actions CI → using in-memory H2 database");

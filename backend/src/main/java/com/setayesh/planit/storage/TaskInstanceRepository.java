@@ -1,6 +1,8 @@
 package com.setayesh.planit.storage;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -24,7 +26,8 @@ public class TaskInstanceRepository {
         initSchema();
     }
 
-    public TaskInstanceRepository(String customDbPath) {
+    @Autowired
+    public TaskInstanceRepository(@Value("${planit.database.path}") String customDbPath) {
         this.url = resolveUrl(customDbPath);
         initSchema();
     }

@@ -2,6 +2,8 @@ package com.setayesh.planit.storage;
 
 import com.setayesh.planit.core.Group;
 import org.springframework.stereotype.Repository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -19,7 +21,8 @@ public class DatabaseGroupRepository {
         initSchema();
     }
 
-    public DatabaseGroupRepository(String customDbPath) {
+    @Autowired
+    public DatabaseGroupRepository(@Value("${planit.database.path}") String customDbPath) {
         this.url = resolveUrl(customDbPath);
         initSchema();
     }
