@@ -2,6 +2,7 @@ package com.setayesh.planit.api;
 
 import com.setayesh.planit.core.Group;
 import com.setayesh.planit.core.GroupService;
+import com.setayesh.planit.core.TaskService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,9 +13,11 @@ import java.util.List;
         RequestMethod.DELETE })
 public class GroupController {
     private final GroupService service;
+    private final TaskService taskService;
 
-    public GroupController(GroupService service) {
+    public GroupController(GroupService service, TaskService taskService) {
         this.service = service;
+        this.taskService = taskService;
     }
 
     @GetMapping
@@ -44,6 +47,7 @@ public class GroupController {
 
     @DeleteMapping("/{id}")
     public void deleteGroup(@PathVariable Long id) {
+        taskService.removeGroupFromTasks(id);
         service.deleteGroup(id);
     }
 }
