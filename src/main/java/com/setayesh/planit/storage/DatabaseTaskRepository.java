@@ -31,12 +31,12 @@ public class DatabaseTaskRepository implements TaskRepository {
     }
 
     private String resolveUrl(String customPath) {
-        if (System.getenv("GITHUB_ACTIONS") != null) {
-            System.out.println("🏗 Running in GitHub Actions CI → using in-memory H2 database");
-            return "jdbc:h2:mem:planit;DB_CLOSE_DELAY=-1";
-        } else if (customPath != null) {
+        if (customPath != null) {
             System.out.println("🧪 Running test database at: " + customPath);
             return "jdbc:h2:file:" + customPath + ";AUTO_SERVER=TRUE";
+        } else if (System.getenv("GITHUB_ACTIONS") != null) {
+            System.out.println("🏗 Running in GitHub Actions CI → using in-memory H2 database");
+            return "jdbc:h2:mem:planit;DB_CLOSE_DELAY=-1";
         } else {
             String dbPath = System.getProperty("user.dir") + "/planit_db";
             System.out.println("💾 Running locally → using file-based H2 database");
@@ -100,20 +100,8 @@ public class DatabaseTaskRepository implements TaskRepository {
                         );
                     """);
 
-            stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS groups (
-                            id IDENTITY PRIMARY KEY,
-                            name VARCHAR(255) NOT NULL
-                        );
-                    """);
-
-            stmt.execute("""
-                        CREATE TABLE IF NOT EXISTS task_instances_completed (
-                            id IDENTITY PRIMARY KEY,
-                            task_id UUID NOT NULL,
-                            completed_date DATE NOT NULL
-                        );
-                    """);
+            stmt.execute("ALTER TABLE tasks ADD COLUMN IF NOT EXISTS next_occurrence DATE");
+            stmt.execute("ALTER TABLE archive ADD COLUMN IF NOT EXISTS next_occurrence DATE");
 
         } catch (SQLException e) {
             System.err.println("⚠️ Database init error: " + e.getMessage());
