@@ -58,6 +58,10 @@ public class TaskController {
 
         Task newTask = new Task(title, deadline, prio);
 
+        if (body.containsKey("groupId")) {
+            newTask.setGroupId(parseLong(body.get("groupId")));
+        }
+
         // startDate
         if (body.containsKey("startDate") && body.get("startDate") != null) {
             newTask.setStartDate(LocalDate.parse(body.get("startDate").toString()));
@@ -130,6 +134,11 @@ public class TaskController {
         if (body.containsKey("priority") && body.get("priority") != null) {
             task.setPriority(
                     Priority.valueOf(body.get("priority").toString().toUpperCase()));
+        }
+
+        // ---------------- GROUP ----------------
+        if (body.containsKey("groupId")) {
+            task.setGroupId(parseLong(body.get("groupId")));
         }
 
         // ---------------- DONE TOGGLE (one-time tasks only!) ----------------
@@ -319,6 +328,16 @@ public class TaskController {
     public ResponseEntity<Void> deleteSeries(@PathVariable UUID id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private static Long parseLong(Object value) {
+        if (value == null || value.toString().isBlank()) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        return Long.valueOf(value.toString());
     }
 
 }
