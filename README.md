@@ -6,6 +6,7 @@
 [![Spring Boot 3.3](https://img.shields.io/badge/Spring_Boot-3.3-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=20232A)](https://react.dev/)
 [![Node.js 22](https://img.shields.io/badge/Node.js-22-5FA04E?logo=nodedotjs&logoColor=white)](https://nodejs.org/)
+[![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 
 PlanIT is a full-stack task-planning application for organizing one-time and recurring work. It combines a responsive React interface with a Spring Boot REST API and local H2 persistence in a single, independently testable monorepo.
 
@@ -107,6 +108,34 @@ The development environment exposes:
 
 Press `Ctrl+C` to stop both processes. To run each application in a separate terminal, use `make backend` and `make frontend`.
 
+## Run with Docker
+
+Docker Compose builds and runs the complete application with persistent data, health checks, bounded container logs, and automatic restart policies:
+
+```bash
+make docker-up
+```
+
+Open the application at http://localhost:3000. The backend remains available from the host at http://localhost:8080 for Swagger UI and local diagnostics.
+
+Useful lifecycle commands:
+
+```bash
+make docker-ps       # Show container and health status
+make docker-logs     # Follow application logs
+make docker-down     # Stop the stack without deleting data
+```
+
+The named `planit-data` volume keeps the H2 database across container rebuilds, replacements, and regular `docker compose down` operations. Both containers use `restart: unless-stopped`, so Docker restarts them after failures and Docker Engine restarts. On macOS, Docker Desktop must be running; enable **Start Docker Desktop when you sign in** if PlanIT should return automatically after a computer restart.
+
+To customize the published ports, copy the provided environment template before starting the stack:
+
+```bash
+cp .env.example .env
+```
+
+Do not run `docker compose down --volumes` unless you intentionally want to delete all persisted PlanIT data.
+
 ## Development commands
 
 Run commands from the repository root:
@@ -120,6 +149,11 @@ Run commands from the repository root:
 | `make test` | Run all backend and frontend tests |
 | `make check` | Run backend verification, frontend linting, tests, and build |
 | `make build` | Create backend and frontend production artifacts |
+| `make docker-build` | Build both production container images |
+| `make docker-up` | Build and start the complete stack in the background |
+| `make docker-down` | Stop the stack while preserving application data |
+| `make docker-logs` | Follow logs from both containers |
+| `make docker-ps` | Show container and health status |
 
 ## Configuration
 
@@ -153,6 +187,7 @@ The GitHub Actions workflow runs the following checks for every push and pull re
 - ESLint for the frontend
 - Jest and React Testing Library tests
 - Vite production build
+- Docker Compose configuration and production image builds
 
 ## Production builds
 
