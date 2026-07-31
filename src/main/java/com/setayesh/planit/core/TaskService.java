@@ -25,7 +25,8 @@ public class TaskService {
     // Constructor for CLI and tests (no instanceRepo needed)
     public TaskService(TaskRepository repo) {
         this.repo = Objects.requireNonNull(repo);
-        this.instanceRepo = new TaskInstanceRepository(); // IN-MEMORY fallback
+        this.instanceRepo = new TaskInstanceRepository(
+                "jdbc:h2:mem:planit-task-service-" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
         this.tasks = new ArrayList<>(repo.findAll());
     }
 
@@ -104,6 +105,19 @@ public class TaskService {
     public void clearCompletedNotArchived() {
         tasks.removeIf(t -> t.isDone() && !t.isArchived());
         save();
+    }
+
+    public void removeGroupFromTasks(Long groupId) {
+        boolean changed = false;
+        for (Task task : tasks) {
+            if (Objects.equals(task.getGroupId(), groupId)) {
+                task.setGroupId(null);
+                changed = true;
+            }
+        }
+        if (changed) {
+            save();
+        }
     }
 
     // ---------------------------------------------------------
