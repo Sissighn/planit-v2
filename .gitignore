@@ -1,5 +1,10 @@
-# Build / IDE
-target/
+# Build output
+**/target/
+**/node_modules/
+**/dist/
+**/coverage/
+
+# IDE
 *.iml
 .idea/
 *.log
@@ -13,6 +18,7 @@ target/
 dependency-reduced-pom.xml
 
 # Local application data
+data/
 planit_db*.db
 planit_tasks.json*
 
