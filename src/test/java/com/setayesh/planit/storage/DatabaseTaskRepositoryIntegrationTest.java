@@ -3,8 +3,10 @@ package com.setayesh.planit.storage;
 import com.setayesh.planit.core.Task;
 import com.setayesh.planit.core.Priority;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.io.TempDir;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -12,32 +14,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DatabaseTaskRepositoryIntegrationTest {
 
-    private static final String DB_PATH = System.getProperty("user.dir") + "/planit_db.mv.db";
+    @TempDir
+    Path tempDir;
 
+    private Path databaseFile;
     private DatabaseTaskRepository repo;
 
     @BeforeEach
     void setup() {
-        repo = new DatabaseTaskRepository(); // <-- FIX
-    }
-
-    @AfterEach
-    void cleanup() {
-        File dbFile = new File(DB_PATH);
-        if (dbFile.exists()) {
-            dbFile.delete();
-        }
+        Path databasePath = tempDir.resolve("planit-test");
+        databaseFile = Path.of(databasePath + ".mv.db");
+        repo = new DatabaseTaskRepository(databasePath.toString());
     }
 
     @Test
     void databaseFileShouldExistAfterInit() {
-        if (System.getenv("GITHUB_ACTIONS") != null) {
-            // In CI: in-memory DB → kein File.
-            return;
-        }
-
-        File dbFile = new File(DB_PATH);
-        assertTrue(dbFile.exists(), "Database file should exist after initialization");
+        assertTrue(Files.exists(databaseFile), "Database file should exist after initialization");
     }
 
     @Test
