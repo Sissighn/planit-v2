@@ -54,3 +54,16 @@ During development, Vite proxies `/api` to the backend on port 8080. Deployments
 ## Local data
 
 The `PLANIT_DATABASE_PATH` environment variable controls the H2 database location. Root development commands set it to `data/planit_db`, keeping runtime state outside both application source trees.
+
+## Container deployment
+
+Docker Compose runs the applications as separate production containers:
+
+- The frontend image builds the React application with Node.js and serves the static output through Nginx.
+- Nginx forwards `/api/*` requests to the backend over the private Compose network.
+- The backend image builds the Spring Boot executable with Maven and runs it on a Java 21 JRE as an unprivileged user.
+- The named `planit-data` volume mounts at `/app/data` and survives container replacement.
+- Container health checks gate frontend startup and monitor both services.
+- `restart: unless-stopped` restores services after failures or Docker Engine restarts.
+
+Only the frontend is published on all host interfaces. The backend diagnostic port binds to `127.0.0.1` and is therefore accessible only from the Docker host.
