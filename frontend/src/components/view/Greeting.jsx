@@ -18,7 +18,7 @@ export default function Greeting() {
   }, []);
 
   return (
-    <p className="text-lg font-amsterdam text-black/80 mt-1 ml-1 dark:text-slate-300/80">
+    <p className="ml-1 text-sm font-medium text-muted">
       {greeting}
     </p>
   );
