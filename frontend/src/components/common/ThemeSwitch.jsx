@@ -25,6 +25,9 @@ export default function ThemeSwitch() {
       root.classList.remove("dark");
     }
     localStorage.setItem("theme", theme);
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme === "dark" ? "#1e293b" : "#f1f5f9");
   }, [theme]);
 
   const toggleTheme = () => {
@@ -33,16 +36,17 @@ export default function ThemeSwitch() {
 
   return (
     <button
+      type="button"
       onClick={toggleTheme}
-      className="w-14 h-8 rounded-full p-1 flex items-center transition-colors duration-300 
-                 bg-slate-100 shadow-[inset_3px_3px_5px_#d1d9e6,_inset_-3px_-3px_5px_#ffffff]
-                 dark:bg-slate-800 dark:shadow-[inset_3px_3px_5px_#0f172a,_inset_-3px_-3px_5px_#334155]"
+      className="neo-inset relative h-9 w-16 shrink-0 rounded-full p-1"
+      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      aria-pressed={theme === "dark"}
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
     >
       <div
-        className={`w-6 h-6 rounded-full flex items-center justify-center transform transition-transform duration-300
-                  bg-slate-100 shadow-[3px_3px_6px_#d1d9e6,_-3px_-3px_6px_#ffffff]
-                  dark:bg-slate-700 dark:shadow-[3px_3px_6px_#0f172a,_-3px_-3px_6px_#334155]
-                  ${theme === "dark" ? "translate-x-6" : "translate-x-0"}`}
+        className={`neo-control flex h-7 w-7 items-center justify-center rounded-full transition-transform duration-300 ${
+          theme === "dark" ? "translate-x-7" : "translate-x-0"
+        }`}
       >
         {theme === "dark" ? (
           <Moon size={14} className="text-purple-300" />
